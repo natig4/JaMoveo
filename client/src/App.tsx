@@ -1,40 +1,49 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Provider } from "react-redux";
+import store from "./store";
 import "./App.css";
-import useHttp from "./hooks/useHttp";
-import { Song, User } from "./types";
 
-const API_URL = import.meta.env.DEV ? "http://localhost:8000" : "";
+import Navbar from "./components/Navbar";
+import ProtectedRoute from "./components/ProtectedRoute";
+import AuthRedirect from "./components/AuthRedirect";
+import SignupPage from "./pages/SignupPage";
+import SigninPage from "./pages/SigninPage";
+import PlayerPage from "./pages/PlayerPage";
 
 function App() {
-  const {
-    data: users,
-    isLoading: usersLoading,
-    error: usersError,
-  } = useHttp<User[]>(`${API_URL}/user`);
-
-  const {
-    data: songs,
-    isLoading: songsLoading,
-    error: songsError,
-  } = useHttp<Song[]>(`${API_URL}/song`);
-
-  console.log("songs", songs);
-  console.log("users", users);
-
   return (
-    <>
-      {(usersLoading || songsLoading) && <p>Loading data...</p>}
-
-      {usersError && <p>Error loading users: {usersError}</p>}
-      {songsError && <p>Error loading songs: {songsError}</p>}
-
-      {users && songs && (
-        <div>
-          <p>
-            Loaded {users.length} users and {songs.length} songs
-          </p>
-        </div>
-      )}
-    </>
+    <Provider store={store}>
+      <BrowserRouter>
+        <Routes>
+          <Route
+            path='/signup'
+            element={
+              <AuthRedirect>
+                <SignupPage />
+              </AuthRedirect>
+            }
+          />
+          <Route
+            path='/signin'
+            element={
+              <AuthRedirect>
+                <SigninPage />
+              </AuthRedirect>
+            }
+          />
+          <Route
+            path='/'
+            element={
+              <ProtectedRoute>
+                <Navbar />
+                <PlayerPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path='*' element={<Navigate to='/' replace />} />
+        </Routes>
+      </BrowserRouter>
+    </Provider>
   );
 }
 

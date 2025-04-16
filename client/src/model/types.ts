@@ -2,6 +2,7 @@ export interface User {
   id: number;
   username: string;
   role: string;
+  instrument?: string;
 }
 
 export interface SongItem {
