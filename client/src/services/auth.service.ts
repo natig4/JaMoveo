@@ -1,6 +1,8 @@
 import { User, UserCredentials } from "../model/types";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  (import.meta.env.MODE === "development" ? "http://localhost:8000" : "");
 
 function getConfig<T>(data: T): RequestInit {
   return {
