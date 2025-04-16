@@ -3,7 +3,7 @@ import * as path from "path";
 import { User, UserRole } from "../models/types";
 
 const users: User[] = [];
-const usersFilePath = path.join(__dirname, "../../data/users.json");
+const usersFilePath = path.join(__dirname, "..", "..", "data", "users.json");
 
 export async function loadUsers(): Promise<void> {
   return new Promise((resolve, reject) => {

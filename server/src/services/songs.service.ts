@@ -3,7 +3,7 @@ import path from "path";
 import { Song } from "../models/types";
 
 const songs: Song[] = [];
-const songsFilePath = path.join(__dirname, "../../data/songs.json");
+const songsFilePath = path.join(__dirname, "..", "..", "data", "songs.json");
 
 export async function loadSongs(): Promise<void> {
   return new Promise((resolve, reject) => {
