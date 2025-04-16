@@ -1,11 +1,13 @@
 import express, { Request, Response, NextFunction } from "express";
-import { join } from "path";
+import helmet from "helmet";
 import cors from "cors";
+import { join } from "path";
 import config from "./config/index";
 import { authRouter } from "./routes/auth.router";
 import { songsRouter } from "./routes/songs.router";
 
 const app = express();
+app.use(helmet());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

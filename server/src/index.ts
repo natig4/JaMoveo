@@ -1,5 +1,5 @@
-import app from "./app";
 import http from "http";
+import app from "./app";
 import config from "./config/index";
 import { loadSongs } from "./services/songs.service";
 import { loadUsers } from "./services/users.service";
