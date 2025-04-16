@@ -1,12 +1,14 @@
 export interface Song {
-  id: string;
+  id: number;
   title: string;
   artist: string;
   imageUrl?: string;
-  data: SongData[];
+  data: SongLine[];
 }
 
-interface SongData {
+export type SongLine = SongItem[];
+
+export interface SongItem {
   lyrics: string;
   chords?: string;
 }
@@ -14,12 +16,10 @@ interface SongData {
 export interface UserCredentials {
   username: string;
   password: string;
-  passwordHash: string;
 }
 
-export interface User
-  extends Omit<UserCredentials, "password" | "passwordHash"> {
-  id: string;
+export interface User extends Omit<UserCredentials, "password"> {
+  id: number;
   role: UserRole;
 }
 
