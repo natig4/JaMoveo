@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import Logo from "./Logo";
 
 interface AuthFormProps {
-  formType: "signin" | "signup";
+  formType: "signin" | "signup" | "signup-admin";
   onSubmit: (
     username: string,
     password: string,
@@ -19,16 +19,16 @@ function AuthForm({ formType, onSubmit, isLoading, error }: AuthFormProps) {
   const [instrument, setInstrument] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const isSignup = formType === "signup";
+  const isLogin = formType === "signin";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
-      if (isSignup) {
-        await onSubmit(username, password, instrument);
-      } else {
+      if (isLogin) {
         await onSubmit(username, password);
+      } else {
+        await onSubmit(username, password, instrument);
       }
     } catch (error) {
       console.error("Form submission error:", error);
@@ -45,7 +45,13 @@ function AuthForm({ formType, onSubmit, isLoading, error }: AuthFormProps) {
         <div className='auth-header'>
           <Logo />
           <h2>Welcome to JaMoveo</h2>
-          <h1>{isSignup ? "Register" : "Log In"}</h1>
+          <h1>
+            {isLogin
+              ? "Log In"
+              : formType === "signup-admin"
+              ? "Admin Register"
+              : "Register"}
+          </h1>
         </div>
 
         {error && <div className='error-message'>{error}</div>}
@@ -53,20 +59,20 @@ function AuthForm({ formType, onSubmit, isLoading, error }: AuthFormProps) {
         <form onSubmit={handleSubmit} className='auth-form'>
           <div className='form-group'>
             <label htmlFor='username'>
-              {isSignup ? "Username*" : "Enter your Username*"}
+              {!isLogin ? "Username*" : "Enter your Username*"}
             </label>
             <input
               type='text'
               id='username'
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder={isSignup ? "Select your username" : "Username"}
+              placeholder={!isLogin ? "Select your username" : "Username"}
               required
               className='form-control'
             />
           </div>
 
-          {isSignup && (
+          {!isLogin && (
             <div className='form-group'>
               <label htmlFor='instrument'>Your instrument*</label>
               <div className='select-wrapper'>
@@ -94,7 +100,7 @@ function AuthForm({ formType, onSubmit, isLoading, error }: AuthFormProps) {
 
           <div className='form-group'>
             <label htmlFor='password'>
-              {isSignup ? "Create password*" : "Enter your Password*"}
+              {!isLogin ? "Create password*" : "Enter your Password*"}
             </label>
             <div className='password-input'>
               <input
@@ -102,7 +108,7 @@ function AuthForm({ formType, onSubmit, isLoading, error }: AuthFormProps) {
                 id='password'
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={isSignup ? "Your Password" : "Password"}
+                placeholder={!isLogin ? "Your Password" : "Password"}
                 required
                 className='form-control'
               />
@@ -121,7 +127,7 @@ function AuthForm({ formType, onSubmit, isLoading, error }: AuthFormProps) {
             </div>
           </div>
 
-          {!isSignup && (
+          {isLogin && (
             <div className='form-options'>
               <div className='remember-me'>
                 <input type='checkbox' id='remember-me' />
@@ -134,12 +140,12 @@ function AuthForm({ formType, onSubmit, isLoading, error }: AuthFormProps) {
           )}
 
           <button type='submit' className='auth-button' disabled={isLoading}>
-            {isLoading ? "Loading..." : isSignup ? "Register" : "Log In"}
+            {isLoading ? "Loading..." : !isLogin ? "Register" : "Log In"}
           </button>
         </form>
 
         <div className='auth-alt-action'>
-          {isSignup ? (
+          {!isLogin ? (
             <>
               Already have an account? <Link to='/signin'>Log In</Link>
             </>

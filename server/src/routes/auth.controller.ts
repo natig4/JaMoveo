@@ -15,7 +15,7 @@ async function registerUser(userData: User, role: UserRole) {
   const newUser = await UsersService.addUser({
     username: userData.username,
     password: userData.password,
-    role: role,
+    role,
     instrument: userData.instrument,
   });
 
@@ -23,70 +23,37 @@ async function registerUser(userData: User, role: UserRole) {
   return userWithoutPassword;
 }
 
-export async function register(req: Request, res: Response): Promise<void> {
-  try {
-    const userData = req.body as User;
-    const user = await registerUser(userData, UserRole.USER);
-    res.status(201).json(user);
-  } catch (error) {
-    console.error("Error registering user:", error);
+function handleRegister(role: UserRole) {
+  return async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userData = req.body as User;
+      const user = await registerUser(userData, role);
+      res.status(201).json(user);
+    } catch (error) {
+      console.error("Error registering user:", error);
 
-    if (error instanceof Error) {
-      if (error.message === "Username already exists") {
-        res.status(409).json({
-          success: false,
-          message: error.message,
-        });
-        return;
-      } else if (error.message === "Username and password are required") {
-        res.status(400).json({
-          success: false,
-          message: error.message,
-        });
-        return;
+      if (error instanceof Error) {
+        const statusMap: Record<string, number> = {
+          "Username already exists": 409,
+          "Username and password are required": 400,
+        };
+
+        const status = statusMap[error.message];
+        if (status) {
+          res.status(status).json({ success: false, message: error.message });
+          return;
+        }
       }
-    }
 
-    res.status(500).json({
-      success: false,
-      message: "Failed to register user",
-    });
-  }
+      res
+        .status(500)
+        .json({ success: false, message: "Failed to register user" });
+    }
+  };
 }
 
-export async function registerAdmin(
-  req: Request,
-  res: Response
-): Promise<void> {
-  try {
-    const userData = req.body as User;
-    const user = await registerUser(userData, UserRole.ADMIN);
-    res.status(201).json(user);
-  } catch (error) {
-    console.error("Error registering admin:", error);
-
-    if (error instanceof Error) {
-      if (error.message === "Username already exists") {
-        res.status(409).json({
-          success: false,
-          message: error.message,
-        });
-        return;
-      } else if (error.message === "Username and password are required") {
-        res.status(400).json({
-          success: false,
-          message: error.message,
-        });
-        return;
-      }
-    }
-
-    res.status(500).json({
-      success: false,
-      message: "Failed to register admin",
-    });
-  }
-}
+export const register = handleRegister(UserRole.USER);
+export const registerAdmin = handleRegister(UserRole.ADMIN);
 
 export async function login(req: Request, res: Response): Promise<void> {
   try {
@@ -100,7 +67,6 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Validate user credentials
     const user = UsersService.validateUserCredentials(username, password);
 
     if (!user) {
@@ -111,8 +77,7 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Return user without password
-    const { password: _password, ...userWithoutPassword } = user;
+    const { password: _, ...userWithoutPassword } = user;
     res.status(200).json(userWithoutPassword);
   } catch (error) {
     console.error("Error logging in:", error);

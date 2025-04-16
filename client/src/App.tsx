@@ -6,15 +6,24 @@ import "./App.css";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthRedirect from "./components/AuthRedirect";
-import SignupPage from "./pages/SignupPage";
 import SigninPage from "./pages/SigninPage";
 import PlayerPage from "./pages/PlayerPage";
+import SignupPage from "./pages/SignupPage";
+import SignupPageAdmin from "./pages/SignupPageAdmin";
 
 function App() {
   return (
     <Provider store={store}>
       <BrowserRouter>
         <Routes>
+          <Route
+            path='/signup-admin'
+            element={
+              <AuthRedirect>
+                <SignupPageAdmin />
+              </AuthRedirect>
+            }
+          />
           <Route
             path='/signup'
             element={

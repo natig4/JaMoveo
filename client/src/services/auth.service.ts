@@ -50,3 +50,13 @@ export function register(
     "Registration failed"
   );
 }
+
+export function registerAdmin(
+  userData: Omit<User, "id" | "role"> & { password: string }
+): Promise<User> {
+  return postRequest<typeof userData, User>(
+    "/register-admin",
+    userData,
+    "Registration failed"
+  );
+}
