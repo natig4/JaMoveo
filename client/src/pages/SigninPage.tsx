@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../hooks/redux-hooks";
-import { login } from "../store/auth-slice";
+import { login as loginAction } from "../store/auth-slice";
 import AuthForm from "../components/AuthForm";
-import { User } from "../model/types";
+import * as authService from "../services/auth.service";
 
 function SigninPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -22,36 +22,17 @@ function SigninPage() {
     setError(null);
 
     try {
-      // In a real app, this would authenticate against your backend
-      // For now, we'll simulate authentication with hardcoded users
-      let user: User;
+      const user = await authService.login({ username, password });
 
-      // Simulate checking against the two users from users.json
-      if (username === "nati" && password === "1234") {
-        user = {
-          id: 1,
-          username: "nati",
-          role: "admin",
-          instrument: "guitar",
-        };
-      } else if (username === "user" && password === "1234") {
-        user = {
-          id: 2,
-          username: "user",
-          role: "user",
-          instrument: "piano",
-        };
-      } else {
-        throw new Error("Invalid credentials");
-      }
-
-      dispatch(login(user));
-
+      dispatch(loginAction(user));
       localStorage.setItem("user", JSON.stringify(user));
-
       navigate("/");
     } catch (err) {
-      setError("Invalid username or password. Please try again.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Invalid username or password. Please try again."
+      );
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -60,7 +41,7 @@ function SigninPage() {
 
   return (
     <AuthForm
-      isSignup={false}
+      formType='signin'
       onSubmit={handleSubmit}
       isLoading={isLoading}
       error={error}

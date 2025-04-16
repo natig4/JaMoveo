@@ -1,8 +1,13 @@
 export interface User {
   id: number;
   username: string;
-  role: string;
+  role: UserRole;
   instrument?: string;
+}
+
+export interface UserCredentials {
+  username: string;
+  password: string;
 }
 
 export interface SongItem {
@@ -19,3 +24,10 @@ export interface Song {
   imageUrl?: string;
   data: SongLine[];
 }
+
+export const UserRole = {
+  ADMIN: "admin",
+  USER: "user",
+} as const;
+
+export type UserRole = (typeof UserRole)[keyof typeof UserRole];

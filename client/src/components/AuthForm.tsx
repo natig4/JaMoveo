@@ -3,24 +3,35 @@ import { Link } from "react-router-dom";
 import Logo from "./Logo";
 
 interface AuthFormProps {
-  isSignup: boolean;
-  onSubmit: (username: string, password: string, instrument?: string) => void;
+  formType: "signin" | "signup";
+  onSubmit: (
+    username: string,
+    password: string,
+    instrument?: string
+  ) => Promise<void>;
   isLoading: boolean;
   error: string | null;
 }
 
-function AuthForm({ isSignup, onSubmit, isLoading, error }: AuthFormProps) {
+function AuthForm({ formType, onSubmit, isLoading, error }: AuthFormProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [instrument, setInstrument] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const isSignup = formType === "signup";
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isSignup) {
-      onSubmit(username, password, instrument);
-    } else {
-      onSubmit(username, password);
+
+    try {
+      if (isSignup) {
+        await onSubmit(username, password, instrument);
+      } else {
+        await onSubmit(username, password);
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
     }
   };
 
@@ -34,21 +45,24 @@ function AuthForm({ isSignup, onSubmit, isLoading, error }: AuthFormProps) {
         <div className='auth-header'>
           <Logo />
           <h2>Welcome to JaMoveo</h2>
-          <h1>{isSignup ? "Register" : "Sign In"}</h1>
+          <h1>{isSignup ? "Register" : "Log In"}</h1>
         </div>
 
-        {error && <div className='error'>{error}</div>}
+        {error && <div className='error-message'>{error}</div>}
 
         <form onSubmit={handleSubmit} className='auth-form'>
           <div className='form-group'>
-            <label htmlFor='username'>Username*</label>
+            <label htmlFor='username'>
+              {isSignup ? "Username*" : "Enter your Username*"}
+            </label>
             <input
               type='text'
               id='username'
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder='Select your username'
+              placeholder={isSignup ? "Select your username" : "Username"}
               required
+              className='form-control'
             />
           </div>
 
@@ -61,6 +75,7 @@ function AuthForm({ isSignup, onSubmit, isLoading, error }: AuthFormProps) {
                   value={instrument}
                   onChange={(e) => setInstrument(e.target.value)}
                   required
+                  className='form-control'
                 >
                   <option value='' disabled>
                     Select your instrument
@@ -79,7 +94,7 @@ function AuthForm({ isSignup, onSubmit, isLoading, error }: AuthFormProps) {
 
           <div className='form-group'>
             <label htmlFor='password'>
-              {isSignup ? "Create password*" : "Password*"}
+              {isSignup ? "Create password*" : "Enter your Password*"}
             </label>
             <div className='password-input'>
               <input
@@ -87,8 +102,9 @@ function AuthForm({ isSignup, onSubmit, isLoading, error }: AuthFormProps) {
                 id='password'
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder='Your Password'
+                placeholder={isSignup ? "Your Password" : "Password"}
                 required
+                className='form-control'
               />
               <button
                 type='button'
@@ -105,8 +121,20 @@ function AuthForm({ isSignup, onSubmit, isLoading, error }: AuthFormProps) {
             </div>
           </div>
 
+          {!isSignup && (
+            <div className='form-options'>
+              <div className='remember-me'>
+                <input type='checkbox' id='remember-me' />
+                <label htmlFor='remember-me'>Remember me</label>
+              </div>
+              <Link to='/forgot-password' className='forgot-password'>
+                Forgot Password?
+              </Link>
+            </div>
+          )}
+
           <button type='submit' className='auth-button' disabled={isLoading}>
-            {isLoading ? "Loading..." : isSignup ? "Register" : "Sign In"}
+            {isLoading ? "Loading..." : isSignup ? "Register" : "Log In"}
           </button>
         </form>
 

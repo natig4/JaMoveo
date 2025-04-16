@@ -13,14 +13,12 @@ export interface SongItem {
   chords?: string;
 }
 
-export interface UserCredentials {
-  username: string;
-  password: string;
-}
-
-export interface User extends Omit<UserCredentials, "password"> {
+export interface User {
   id: number;
   role: UserRole;
+  username: string;
+  password: string;
+  instrument?: string;
 }
 
 export const UserRole = {

@@ -2,7 +2,7 @@ import express, { Request, Response, NextFunction } from "express";
 import { join } from "path";
 import cors from "cors";
 import config from "./config/index";
-import { usersRouter } from "./routes/users.router";
+import { authRouter } from "./routes/auth.router";
 import { songsRouter } from "./routes/songs.router";
 
 const app = express();
@@ -22,7 +22,7 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
   next();
 });
 
-app.use("/user", usersRouter);
+app.use("/auth", authRouter);
 app.use("/song", songsRouter);
 
 if (config.nodeEnv === "production") {

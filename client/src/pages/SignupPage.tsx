@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAppDispatch } from "../hooks/redux-hooks";
 import { login } from "../store/auth-slice";
 import AuthForm from "../components/AuthForm";
-import { User } from "../model/types";
+import * as authService from "../services/auth.service";
 
 function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,20 +26,21 @@ function SignupPage() {
     setError(null);
 
     try {
-      const user: User = {
-        id: Math.floor(Math.random() * 1000),
-        username: username,
-        role: "user",
-        instrument: instrument || "other",
-      };
+      const user = await authService.register({
+        username,
+        password,
+        instrument,
+      });
 
       dispatch(login(user));
-
       localStorage.setItem("user", JSON.stringify(user));
-
       navigate("/");
     } catch (err) {
-      setError("Failed to sign up. Please try again.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to sign up. Please try again."
+      );
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -48,7 +49,7 @@ function SignupPage() {
 
   return (
     <AuthForm
-      isSignup={true}
+      formType='signup'
       onSubmit={handleSubmit}
       isLoading={isLoading}
       error={error}

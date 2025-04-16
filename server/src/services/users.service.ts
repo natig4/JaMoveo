@@ -33,8 +33,13 @@ export async function loadUsers(): Promise<void> {
   });
 }
 
-export function getAllUsers(): User[] {
-  return users.map(({ id, role, username }) => ({ id, role, username }));
+export function getAllUsers(): Omit<User, "password">[] {
+  return users.map(({ id, role, username, instrument }) => ({
+    id,
+    role,
+    username,
+    instrument,
+  }));
 }
 
 export function getUserById(id: number): User | undefined {
@@ -58,6 +63,8 @@ export async function addUser(userData: Omit<User, "id">): Promise<User> {
           )
         ) + 1
       : 1;
+
+  // TODO:need to salt the password
 
   const newUser: User = {
     ...userData,
@@ -98,4 +105,15 @@ async function saveUsers(): Promise<void> {
     console.error("Error saving users:", error);
     throw new Error("Failed to save users data");
   }
+}
+
+export function validateUserCredentials(
+  username: string,
+  password: string
+): User | undefined {
+  const user = getUserByUsername(username);
+  if (!user || user.password !== password) {
+    return undefined;
+  }
+  return user;
 }
