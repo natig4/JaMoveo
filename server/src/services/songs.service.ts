@@ -37,9 +37,8 @@ export function getAllSongs(): Song[] {
   return songs;
 }
 
-export function getSongById(id: string | number): Song | undefined {
-  const songId = typeof id === "string" ? id : id.toString();
-  return songs.find((song) => song.id.toString() === songId);
+export function getSongById(id: number): Song | undefined {
+  return songs.find((song) => song.id === id);
 }
 
 export async function addSong(song: Omit<Song, "id">): Promise<Song> {
