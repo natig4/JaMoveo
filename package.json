@@ -1,7 +1,7 @@
 {
   "name": "jamoveo",
   "version": "1.0.0",
-  "description": "Movie recommendation application",
+  "description": "Chords and lyrics app",
   "main": "index.js",
   "scripts": {
     "start": "concurrently \"npm run server\" \"npm run client\"",
