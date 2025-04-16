@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:8000";
+const API_URL = "";
 
 export async function httpGetAllSongs() {
   const songs = await fetch(`${API_URL}/song`);

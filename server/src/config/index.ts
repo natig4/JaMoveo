@@ -20,7 +20,7 @@ const production: Config = {
   port: parseInt(process.env.PORT || "8000", 10),
   nodeEnv: "production",
   dataPath: process.env.DATA_PATH || (isVercel ? "/tmp" : "./data"),
-  clientUrl: process.env.CLIENT_URL || "https://jamoveo.vercel.app",
+  clientUrl: process.env.CLIENT_URL || "https://jamoveo-8qpb.onrender.com/",
   corsOrigin: ["*"],
 };
 
