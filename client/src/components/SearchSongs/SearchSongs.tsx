@@ -40,13 +40,14 @@ const SearchSongs: React.FC = () => {
   };
 
   useEffect(() => {
+    setInputValue(searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
     return () => {
-      if (searchQuery) {
-        dispatch(setSearchQuery(""));
-        dispatch(searchSongs(""));
-      }
+      dispatch(setSearchQuery(""));
     };
-  }, [dispatch, searchQuery]);
+  }, [dispatch]);
 
   return (
     <form onSubmit={handleSubmit} className={styles.searchForm}>

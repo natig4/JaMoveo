@@ -21,7 +21,6 @@ export default function AdminPlayer() {
   if (error && filteredSongs.length === 0) {
     return <div className={styles.error}>{error}</div>;
   }
-  console.log("searchQuery", searchQuery);
 
   return (
     <div className={styles.adminSection}>
