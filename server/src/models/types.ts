@@ -21,12 +21,12 @@ export interface UserCredentials {
 export interface User {
   id: string;
   username: string;
+  instrument?: string;
   email?: string;
   password?: string;
   googleId?: string;
   displayName?: string;
   role: UserRole;
-  instrument?: string;
 }
 
 export const UserRole = {
