@@ -3,6 +3,16 @@ import passport from "passport";
 import * as UsersService from "../services/users.service";
 import { User, UserRole } from "../models/types";
 
+// Default session options
+const DEFAULT_SESSION_OPTIONS = {
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours
+};
+
+// Extended session options for "remember me"
+const EXTENDED_SESSION_OPTIONS = {
+  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+};
+
 async function registerUser(userData: Omit<User, "id">, role: UserRole) {
   if (!userData.username || !userData.password) {
     throw new Error("Username and password are required");
@@ -36,6 +46,10 @@ function handleRegister(role: UserRole) {
             message: "Registration successful but failed to log in",
           });
           return;
+        }
+
+        if (req.session) {
+          req.session.cookie.maxAge = DEFAULT_SESSION_OPTIONS.maxAge;
         }
 
         res.status(201).json({
@@ -101,6 +115,16 @@ export function login(req: Request, res: Response, next: NextFunction): void {
           });
         }
 
+        const rememberMe = req.body.rememberMe === true;
+
+        if (req.session) {
+          if (rememberMe) {
+            req.session.cookie.maxAge = EXTENDED_SESSION_OPTIONS.maxAge;
+          } else {
+            req.session.cookie.maxAge = null;
+          }
+        }
+
         return res.status(200).json({
           success: true,
           user,
@@ -120,10 +144,25 @@ export function logout(req: Request, res: Response): void {
       });
     }
 
-    res.status(200).json({
-      success: true,
-      message: "Successfully logged out",
-    });
+    if (req.session) {
+      req.session.destroy((sessionErr: Error) => {
+        if (sessionErr) {
+          console.error("Error destroying session:", sessionErr);
+        }
+
+        res.clearCookie("connect.sid");
+
+        res.status(200).json({
+          success: true,
+          message: "Successfully logged out",
+        });
+      });
+    } else {
+      res.status(200).json({
+        success: true,
+        message: "Successfully logged out",
+      });
+    }
   });
 }
 
@@ -143,5 +182,9 @@ export function getCurrentUser(req: Request, res: Response): void {
 }
 
 export function googleAuthCallback(req: Request, res: Response): void {
+  if (req.session && req.user) {
+    req.session.cookie.maxAge = DEFAULT_SESSION_OPTIONS.maxAge;
+  }
+
   res.redirect(req.user ? "/" : "/signin");
 }

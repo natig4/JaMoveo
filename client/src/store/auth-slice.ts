@@ -50,14 +50,54 @@ export const registerUser = createAsyncThunk(
   }
 );
 
-export const loginUser = createAsyncThunk(
-  "auth/login",
+export const registerAdminUser = createAsyncThunk(
+  "auth/registerAdmin",
   async (
-    { username, password }: { username: string; password: string },
+    {
+      username,
+      password,
+      email,
+      instrument,
+    }: {
+      username: string;
+      password: string;
+      email?: string;
+      instrument?: string;
+    },
     { rejectWithValue }
   ) => {
     try {
-      const user = await authService.login(username, password);
+      const user = await authService.registerAdmin(
+        username,
+        password,
+        email,
+        instrument
+      );
+      return user;
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Admin registration failed"
+      );
+    }
+  }
+);
+
+export const loginUser = createAsyncThunk(
+  "auth/login",
+  async (
+    {
+      username,
+      password,
+      rememberMe = false,
+    }: {
+      username: string;
+      password: string;
+      rememberMe?: boolean;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const user = await authService.login(username, password, rememberMe);
       return user;
     } catch (error) {
       return rejectWithValue(
@@ -126,6 +166,26 @@ const authSlice = createSlice({
       }
     );
     builder.addCase(registerUser.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    // Register Admin cases
+    builder.addCase(registerAdminUser.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(
+      registerAdminUser.fulfilled,
+      (state, action: PayloadAction<User>) => {
+        state.isAuthenticated = true;
+        state.user = action.payload;
+        state.loading = false;
+        state.error = null;
+        state.initialized = true;
+      }
+    );
+    builder.addCase(registerAdminUser.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
     });

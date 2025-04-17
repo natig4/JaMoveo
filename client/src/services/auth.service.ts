@@ -45,10 +45,38 @@ export async function register(
   return data.user;
 }
 
-export async function login(username: string, password: string): Promise<User> {
+export async function registerAdmin(
+  username: string,
+  password: string,
+  email?: string,
+  instrument?: string
+): Promise<User> {
+  const response = await fetch(
+    `${API_URL}/auth/register-admin`,
+    getConfig({ username, password, email, instrument })
+  );
+
+  const data = (await response.json()) as AuthResponse;
+
+  if (!response.ok) {
+    throw new Error(data.message || "Admin registration failed");
+  }
+
+  if (!data.user) {
+    throw new Error("User data missing in response");
+  }
+
+  return data.user;
+}
+
+export async function login(
+  username: string,
+  password: string,
+  rememberMe: boolean = false
+): Promise<User> {
   const response = await fetch(
     `${API_URL}/auth/login`,
-    getConfig({ username, password })
+    getConfig({ username, password, rememberMe })
   );
 
   const data = (await response.json()) as AuthResponse;

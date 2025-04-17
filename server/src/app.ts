@@ -34,7 +34,7 @@ app.use(
   cookieSession({
     name: "session",
     keys: [config.sessionSecret, config.sessionSecret2],
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    // The max age cookie is set via the controllers
     secure: config.nodeEnv === "production",
     httpOnly: true,
     sameSite: config.nodeEnv === "production" ? "none" : "lax",
@@ -70,14 +70,7 @@ app.use("/auth", authRouter);
 app.use("/song", songsRouter);
 
 if (config.nodeEnv === "development") {
-  // In development, we need to proxy to the Vite dev server
   app.get("*", (req: Request, res: Response, next: NextFunction) => {
-    // Skip API routes
-    if (req.url.startsWith("/auth") || req.url.startsWith("/song")) {
-      return next();
-    }
-
-    // Try to serve from client/dist if it exists
     const clientDistPath = join(__dirname, "../../client/dist");
     const indexPath = join(clientDistPath, "index.html");
 
