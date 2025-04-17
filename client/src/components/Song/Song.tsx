@@ -14,23 +14,29 @@ export default function Song({ song }: { song: ISong }) {
 
   return (
     <div key={song.id} className={styles.songItem}>
-      <div className={styles.songPreview}>
-        <div className={styles.songThumbnail}>
-          <div className={styles.mockImage}></div>
-        </div>
-        <div className={styles.songInfo}>
-          <span className={styles.songTitle}>{song.title}</span>
-          <span className={styles.songArtist}>{song.artist}</span>
-        </div>
+      <div className={styles.songThumbnail}>
+        <img
+          src={song.imageUrl || "/src/assets/no-song-Image.jpg"}
+          alt={song.title}
+        />
       </div>
-      <div className={styles.songControls}>
-        <button
-          className={styles.playButton}
-          onClick={() => handlePlaySong(song.id)}
-          aria-label={`Play ${song.title} by ${song.artist}`}
-        >
-          <FaPlay />
-        </button>
+      <div className={styles.songData}>
+        <div className={styles.songPreview}>
+          <div className={styles.songInfo}>
+            <span className={styles.songTitle}>{song.title}</span>
+            <span className={styles.songTitle}> - </span>
+            <span className={styles.songTitle}>{song.artist}</span>
+          </div>
+        </div>
+        <div className={styles.songControls}>
+          <button
+            className={styles.playButton}
+            onClick={() => handlePlaySong(song.id)}
+            aria-label={`Play ${song.title} by ${song.artist}`}
+          >
+            <FaPlay />
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -2,9 +2,7 @@
 
 .songItem {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 0.8rem 1.2rem;
   border-radius: 0.8rem;
   transition: background-color 0.2s;
   background-color: #f5f2e9;
@@ -14,6 +12,14 @@
   }
 }
 
+.songData {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.8rem 1.2rem;
+}
+
 .songPreview {
   display: flex;
   align-items: center;
@@ -21,15 +27,14 @@
 }
 
 .songThumbnail {
-  width: 4rem;
-  height: 4rem;
+  width: 6.4rem;
+  height: 6.4rem;
   border-radius: 0.4rem;
   overflow: hidden;
 
-  .mockImage {
+  img {
     width: 100%;
     height: 100%;
-    background-color: #ddd;
     background-size: cover;
     background-position: center;
   }
@@ -37,18 +42,14 @@
 
 .songInfo {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .songTitle {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
   font-weight: 500;
   color: #000;
-}
-
-.songArtist {
-  font-size: 1.2rem;
-  color: #666;
 }
 
 .songControls {
@@ -75,14 +76,9 @@
   }
 }
 
-.iconPlaceholder {
-  font-size: 1.4rem;
-  font-weight: bold;
-}
-
 .loading,
 .error {
-  padding: 20px;
+  padding: 2rem;
   text-align: center;
   font-size: 1.6rem;
 }
