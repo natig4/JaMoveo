@@ -8,21 +8,15 @@ import Avatar from "../Avatar/Avatar";
 
 function SiteHeader() {
   const { user } = useAppSelector((state) => state.auth);
-  // const dispatch = useAppDispatch();
-  // const navigate = useNavigate();
-
-  // const handleLogout = async () => {
-  //   await dispatch(logoutUser());
-  //   navigate("/signin");
-  // };
 
   return (
     <header className={styles.header}>
       <Link to='/'>
         <Logo color='#FFCD29' className={`${styles.logo} bebas-neue-regular`} />
       </Link>
-
-      <Avatar imageUrl={user?.imageUrl} alt={user?.username} />
+      <Link to='/user'>
+        <Avatar imageUrl={user?.imageUrl} alt={user?.username} />
+      </Link>
     </header>
   );
 }

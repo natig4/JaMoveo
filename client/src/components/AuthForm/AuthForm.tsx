@@ -4,6 +4,7 @@ import styles from "./AuthForm.module.scss";
 import { useInput } from "../../hooks/useInput";
 import Input from "../Input/Input";
 import Logo from "../Logo/Logo";
+import StyledButton from "../StyledButton/StyledButton";
 
 interface AuthFormProps {
   formType: "signin" | "signup" | "signup-admin";
@@ -119,8 +120,6 @@ function AuthForm({
           <h1>{getHeaderTitle()}</h1>
         </div>
 
-        {error && <div className={styles.errorMessage}>{error}</div>}
-
         <form onSubmit={handleSubmit} className={styles.form}>
           <Input
             id='username'
@@ -195,9 +194,10 @@ function AuthForm({
             </div>
           )}
 
-          <button
+          {error && <p className={styles.errorMessage}>{error}</p>}
+
+          <StyledButton
             type='submit'
-            className={styles.submitButton}
             disabled={
               isLoading ||
               usernameHasError ||
@@ -206,7 +206,7 @@ function AuthForm({
             }
           >
             {isLoading ? "Loading..." : isLogin ? "Log in" : "Register"}
-          </button>
+          </StyledButton>
         </form>
 
         <div className={styles.authRedirect}>
