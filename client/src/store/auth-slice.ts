@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { User } from "../model/types";
 import * as authService from "../services/auth.service";
+import * as userService from "../services/users.service";
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -141,6 +142,29 @@ export const fetchCurrentUser = createAsyncThunk(
   }
 );
 
+export const updateUserProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async (
+    {
+      userId,
+      userData,
+    }: {
+      userId: string;
+      userData: Partial<User>;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const updatedUser = await userService.updateUserProfile(userId, userData);
+      return updatedUser;
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Failed to update profile"
+      );
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -245,6 +269,24 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = action.payload as string;
       state.initialized = true;
+    });
+
+    // Profile update cases
+    builder.addCase(updateUserProfile.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(
+      updateUserProfile.fulfilled,
+      (state, action: PayloadAction<User>) => {
+        state.user = action.payload;
+        state.loading = false;
+        state.error = null;
+      }
+    );
+    builder.addCase(updateUserProfile.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
     });
   },
 });

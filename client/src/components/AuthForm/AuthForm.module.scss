@@ -26,7 +26,7 @@
 }
 
 .errorMessage {
-  color: #e53e3e;
+  color: variables.$error-color;
   font-size: 1.6rem;
 }
 

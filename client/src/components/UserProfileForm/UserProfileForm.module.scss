@@ -1,0 +1,42 @@
+@use "../../style/variables";
+
+.formContainer {
+  padding: 2rem;
+  background-color: white;
+  border-radius: 0.8rem;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+
+  h2 {
+    font-size: 2.4rem;
+    margin-bottom: 2rem;
+    color: variables.$brown;
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+}
+
+.errorMessage {
+  color: variables.$error-color;
+  font-size: 1.6rem;
+}
+
+.successMessage {
+  color: #38a169;
+  font-size: 1.6rem;
+  font-weight: 500;
+}
+
+.submitButton {
+  margin-top: 1rem;
+}
+
+@media (max-width: variables.$breakpoint-sm) {
+  .formContainer {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+}

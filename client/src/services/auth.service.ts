@@ -4,9 +4,9 @@ const API_URL =
   import.meta.env.VITE_API_URL ||
   (import.meta.env.MODE === "development" ? "http://localhost:8000" : "");
 
-function getConfig<T>(data: T): RequestInit {
+export function getConfig<T>(data: T, method: string = "POST"): RequestInit {
   return {
-    method: "POST",
+    method: method,
     headers: {
       "Content-Type": "application/json",
     },

@@ -5,6 +5,7 @@ import { useInput } from "../../hooks/useInput";
 import Input from "../Input/Input";
 import Logo from "../Logo/Logo";
 import StyledButton from "../StyledButton/StyledButton";
+import InstrumentSelect from "../InstrumentSelect";
 
 interface AuthFormProps {
   formType: "signin" | "signup" | "signup-admin";
@@ -40,7 +41,7 @@ function AuthForm({
     hasError: emailHasError,
   } = useInput("", (value) => {
     if (!value && formType === "signin") return true; // Email is optional for signin
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+    return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value);
   });
 
   const {
@@ -91,17 +92,6 @@ function AuthForm({
     });
   };
 
-  const instrumentOptions = [
-    { value: "", label: "Select your instrument", disabled: true },
-    { value: "guitar", label: "Guitar" },
-    { value: "piano", label: "Piano" },
-    { value: "drums", label: "Drums" },
-    { value: "bass", label: "Bass" },
-    { value: "saxophone", label: "Saxophone" },
-    { value: "vocals", label: "Vocals" },
-    { value: "other", label: "Other" },
-  ];
-
   const isLogin = formType === "signin";
   const isAdminSignup = formType === "signup-admin";
 
@@ -149,16 +139,12 @@ function AuthForm({
           )}
 
           {!isLogin && (
-            <Input
-              id='instrument'
-              label='Your instrument'
+            <InstrumentSelect
               value={instrument}
               onChange={handleInstrumentChange}
               onBlur={handleInstrumentBlur}
-              options={instrumentOptions}
               required
               hasError={instrumentHasError}
-              errorText='Please select an instrument'
             />
           )}
 

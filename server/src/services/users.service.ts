@@ -122,6 +122,35 @@ export async function addUser(userData: Omit<User, "id">): Promise<User> {
   return userWithoutPassword as User;
 }
 
+export async function updateUser(
+  userId: string,
+  userData: Partial<User>
+): Promise<Omit<User, "password" | "googleId"> | null> {
+  const userIndex = users.findIndex(
+    (user) => String(user.id) === String(userId)
+  );
+
+  if (userIndex === -1) {
+    return null;
+  }
+
+  // Only allow updating specific fields
+  const allowedUpdates = ["displayName", "instrument", "email"];
+  const updatedUser = { ...users[userIndex] };
+
+  for (const field of allowedUpdates) {
+    if (field in userData) {
+      (updatedUser as any)[field] = (userData as any)[field];
+    }
+  }
+
+  users[userIndex] = updatedUser;
+  await saveUsers();
+
+  const { password, googleId, ...userWithoutSensitiveInfo } = updatedUser;
+  return userWithoutSensitiveInfo;
+}
+
 async function saveUsers(): Promise<void> {
   try {
     const fileContent = JSON.stringify(users, null, 2);

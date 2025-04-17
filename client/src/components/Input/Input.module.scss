@@ -9,7 +9,7 @@
 
   &.required::after {
     content: "*";
-    color: #e53e3e;
+    color: variables.$error-color;
     margin-left: 0.25rem;
   }
 }
@@ -31,7 +31,7 @@
   }
 
   &.hasError {
-    border-color: #e53e3e;
+    border-color: variables.$error-color;
   }
 
   &::placeholder {
@@ -88,7 +88,7 @@
 }
 
 .errorMessage {
-  color: #e53e3e;
+  color: variables.$error-color;
   font-size: 1.3rem;
   margin-top: 0.5rem;
 }
