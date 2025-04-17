@@ -13,20 +13,21 @@ passport.serializeUser((user: any, done) => {
   done(null, user.id);
 });
 
-passport.deserializeUser((id: string, done) => {
+passport.deserializeUser(async (id: string, done) => {
   try {
     const user = getUserById(id);
     if (!user) {
       return done(new Error("User not found"), null);
     }
 
-    const { password, ...userWithoutPassword } = user;
-    done(null, userWithoutPassword);
+    const { password, googleId, ...userWithoutSensitiveInfo } = user;
+    done(null, userWithoutSensitiveInfo);
   } catch (error) {
     done(error, null);
   }
 });
 
+// Local strategy for username/password login
 passport.use(
   new LocalStrategy(
     { usernameField: "username" },
@@ -40,7 +41,14 @@ passport.use(
           });
         }
 
-        const isMatch = await comparePasswords(password, user.password || "");
+        // If user has no password (Google-only user), deny login
+        if (!user.password) {
+          return done(null, false, {
+            message: "This account cannot use password login",
+          });
+        }
+
+        const isMatch = await comparePasswords(password, user.password);
 
         if (!isMatch) {
           return done(null, false, {
@@ -48,16 +56,16 @@ passport.use(
           });
         }
 
-        const { password: _, ...userWithoutPassword } = user;
-        return done(null, userWithoutPassword);
+        const { password: _, googleId, ...userWithoutSensitiveInfo } = user;
+        return done(null, userWithoutSensitiveInfo);
       } catch (error) {
         return done(error);
       }
     }
   )
 );
-console.log("config", config);
 
+// Google OAuth strategy
 passport.use(
   new GoogleStrategy(
     {
@@ -76,7 +84,8 @@ passport.use(
           role: "user",
         });
 
-        return done(null, user);
+        const { password, ...userWithoutPassword } = user;
+        return done(null, userWithoutPassword);
       } catch (error) {
         return done(error);
       }

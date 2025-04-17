@@ -9,6 +9,7 @@ import { authRouter } from "./routes/auth.router";
 import { songsRouter } from "./routes/songs.router";
 
 const app = express();
+
 app.use(helmet());
 
 app.use(express.json());
@@ -18,6 +19,8 @@ app.use(
   cors({
     origin: config.corsOrigin,
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -25,7 +28,7 @@ app.use(
   cookieSession({
     name: "session",
     keys: [config.sessionSecret, config.sessionSecret2],
-    maxAge: 24 * 60 * 60 * 1000,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
     secure: config.nodeEnv === "production",
     httpOnly: true,
     sameSite: config.nodeEnv === "production" ? "none" : "lax",
@@ -35,22 +38,22 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// TODO: remember to remove it once I finish
-app.use((req: Request, _res: Response, next: NextFunction) => {
-  console.log(`${new Date().toISOString()} | ${req.method} ${req.url}`);
-  next();
-});
+// Request logging middleware for development
+if (config.nodeEnv === "development") {
+  app.use((req: Request, _res: Response, next: NextFunction) => {
+    console.log(`${new Date().toISOString()} | ${req.method} ${req.url}`);
+    next();
+  });
+}
 
 app.use("/auth", authRouter);
 app.use("/song", songsRouter);
 
-if (config.nodeEnv === "production") {
-  app.use(express.static(join(__dirname, "../../client/dist")));
+app.use(express.static(join(__dirname, "../../client/dist")));
 
-  app.get("*", (req: Request, res: Response) => {
-    res.sendFile(join(__dirname, "../../client/dist/index.html"));
-  });
-}
+app.get("*", (_req: Request, res: Response) => {
+  res.sendFile(join(__dirname, "../../client/dist/index.html"));
+});
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({

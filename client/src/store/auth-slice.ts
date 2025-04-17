@@ -7,6 +7,7 @@ interface AuthState {
   user: User | null;
   loading: boolean;
   error: string | null;
+  initialized: boolean;
 }
 
 const initialState: AuthState = {
@@ -14,6 +15,7 @@ const initialState: AuthState = {
   user: null,
   loading: false,
   error: null,
+  initialized: false,
 };
 
 export const registerUser = createAsyncThunk(
@@ -81,7 +83,13 @@ export const logoutUser = createAsyncThunk(
 
 export const fetchCurrentUser = createAsyncThunk(
   "auth/fetchCurrentUser",
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, getState }) => {
+    const state = getState() as { auth: AuthState };
+
+    if (state.auth.initialized && !state.auth.isAuthenticated) {
+      return null;
+    }
+
     try {
       const user = await authService.getCurrentUser();
       return user;
@@ -114,6 +122,7 @@ const authSlice = createSlice({
         state.user = action.payload;
         state.loading = false;
         state.error = null;
+        state.initialized = true;
       }
     );
     builder.addCase(registerUser.rejected, (state, action) => {
@@ -133,6 +142,7 @@ const authSlice = createSlice({
         state.user = action.payload;
         state.loading = false;
         state.error = null;
+        state.initialized = true;
       }
     );
     builder.addCase(loginUser.rejected, (state, action) => {
@@ -166,6 +176,7 @@ const authSlice = createSlice({
         state.user = action.payload;
         state.loading = false;
         state.error = null;
+        state.initialized = true;
       }
     );
     builder.addCase(fetchCurrentUser.rejected, (state, action) => {
@@ -173,6 +184,7 @@ const authSlice = createSlice({
       state.user = null;
       state.loading = false;
       state.error = action.payload as string;
+      state.initialized = true;
     });
   },
 });

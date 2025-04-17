@@ -10,7 +10,7 @@ function getConfig<T>(data: T): RequestInit {
     headers: {
       "Content-Type": "application/json",
     },
-    credentials: "include",
+    credentials: "include", // Important for cookies
     body: JSON.stringify(data),
   };
 }
@@ -83,7 +83,11 @@ export async function getCurrentUser(): Promise<User | null> {
     });
 
     if (!response.ok) {
-      return null;
+      if (response.status === 401) {
+        // Not authenticated, but not an error
+        return null;
+      }
+      throw new Error("Failed to fetch current user");
     }
 
     const data = (await response.json()) as AuthResponse;

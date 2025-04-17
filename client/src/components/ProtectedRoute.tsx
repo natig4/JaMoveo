@@ -1,27 +1,21 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
-import { useAppSelector, useAppDispatch } from "../hooks/redux-hooks";
-import { fetchCurrentUser } from "../store/auth-slice";
+import { useAppSelector } from "../hooks/redux-hooks";
 
 interface ProtectedRouteProps {
   children: ReactNode;
 }
 
 function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, loading } = useAppSelector((state) => state.auth);
-  const dispatch = useAppDispatch();
+  const { isAuthenticated, loading, initialized } = useAppSelector(
+    (state) => state.auth
+  );
 
-  useEffect(() => {
-    if (!isAuthenticated && !loading) {
-      dispatch(fetchCurrentUser());
-    }
-  }, [dispatch, isAuthenticated, loading]);
-
-  if (loading) {
+  if (loading && !initialized) {
     return <div className='auth-loading'>Loading...</div>;
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && initialized) {
     return <Navigate to='/signin' replace />;
   }
 

@@ -49,7 +49,7 @@ export function getAllUsers(): Omit<User, "password" | "googleId">[] {
 }
 
 export function getUserById(id: string): User | undefined {
-  return users.find((user) => user.id === id);
+  return users.find((user) => String(user.id) === String(id));
 }
 
 export function getUserByUsername(username: string): User | undefined {
@@ -60,31 +60,38 @@ export function getUserByGoogleId(googleId: string): User | undefined {
   return users.find((user) => user.googleId === googleId);
 }
 
+export function getUserByEmail(email: string): User | undefined {
+  return users.find((user) => user.email === email);
+}
+
 export async function findOrCreateGoogleUser(
   profile: GoogleUserProfile
 ): Promise<User> {
+  // First, check if user already exists with this Google ID
   let user = getUserByGoogleId(profile.googleId);
-
   if (user) {
     return user;
   }
 
+  // Check if a user with the same email already exists
   if (profile.email) {
-    user = users.find((u) => u.email === profile.email);
-
+    user = getUserByEmail(profile.email);
     if (user) {
       user.googleId = profile.googleId;
+      user.displayName = profile.displayName || user.displayName;
       await saveUsers();
       return user;
     }
   }
 
+  // Create a new user with Google profile info
   return addUser({
     username: profile.username,
     email: profile.email,
     googleId: profile.googleId,
     displayName: profile.displayName,
-    role: profile.role,
+    role: profile.role || UserRole.USER,
+    // No password needed for Google-authenticated users
   });
 }
 
@@ -97,19 +104,21 @@ export async function addUser(userData: Omit<User, "id">): Promise<User> {
     throw new Error("Email already exists");
   }
 
-  const hashedPassword = await hashPassword(userData.password as string);
-
   const newUser: User = {
     ...userData,
     id: randomUUID(),
     role: userData.role || UserRole.USER,
-    password: hashedPassword,
   };
+
+  // Only hash password if one is provided (not for Google auth)
+  if (userData.password) {
+    newUser.password = await hashPassword(userData.password);
+  }
 
   users.push(newUser);
   await saveUsers();
 
-  const { password: _, ...userWithoutPassword } = newUser;
+  const { password, ...userWithoutPassword } = newUser;
   return userWithoutPassword as User;
 }
 

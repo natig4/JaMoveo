@@ -1,10 +1,10 @@
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Provider } from "react-redux";
-import store from "./store";
+import { useDispatch, useSelector } from "react-redux";
 import "./App.css";
 
 import { fetchCurrentUser } from "./store/auth-slice";
+import { AppDispatch, RootState } from "./store";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthRedirect from "./components/AuthRedirect";
@@ -13,58 +13,57 @@ import SignupPageAdmin from "./pages/SignupPageAdmin";
 import SigninPage from "./pages/SigninPage";
 import PlayerPage from "./pages/PlayerPage";
 
-const AppInitializer = ({ children }: { children: React.ReactNode }) => {
-  useEffect(() => {
-    store.dispatch(fetchCurrentUser());
-  }, []);
-
-  return <>{children}</>;
-};
-
 function App() {
+  const dispatch = useDispatch<AppDispatch>();
+  const { initialized } = useSelector((state: RootState) => state.auth);
+
+  useEffect(() => {
+    dispatch(fetchCurrentUser());
+  }, [dispatch]);
+
+  if (!initialized) {
+    return <div className='app-loading'>Loading...</div>;
+  }
+
   return (
-    <Provider store={store}>
-      <AppInitializer>
-        <BrowserRouter>
-          <Routes>
-            <Route
-              path='/signup-admin'
-              element={
-                <AuthRedirect>
-                  <SignupPageAdmin />
-                </AuthRedirect>
-              }
-            />
-            <Route
-              path='/signup'
-              element={
-                <AuthRedirect>
-                  <SignupPage />
-                </AuthRedirect>
-              }
-            />
-            <Route
-              path='/signin'
-              element={
-                <AuthRedirect>
-                  <SigninPage />
-                </AuthRedirect>
-              }
-            />
-            <Route
-              path='/'
-              element={
-                <ProtectedRoute>
-                  <Navbar />
-                  <PlayerPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route path='*' element={<Navigate to='/' replace />} />
-          </Routes>
-        </BrowserRouter>
-      </AppInitializer>
-    </Provider>
+    <BrowserRouter>
+      <Routes>
+        <Route
+          path='/signup-admin'
+          element={
+            <AuthRedirect>
+              <SignupPageAdmin />
+            </AuthRedirect>
+          }
+        />
+        <Route
+          path='/signup'
+          element={
+            <AuthRedirect>
+              <SignupPage />
+            </AuthRedirect>
+          }
+        />
+        <Route
+          path='/signin'
+          element={
+            <AuthRedirect>
+              <SigninPage />
+            </AuthRedirect>
+          }
+        />
+        <Route
+          path='/'
+          element={
+            <ProtectedRoute>
+              <Navbar />
+              <PlayerPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path='*' element={<Navigate to='/' replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 

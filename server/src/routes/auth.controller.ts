@@ -1,4 +1,5 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
+import passport from "passport";
 import * as UsersService from "../services/users.service";
 import { User, UserRole } from "../models/types";
 
@@ -26,7 +27,22 @@ function handleRegister(role: UserRole) {
     try {
       const userData = req.body;
       const user = await registerUser(userData, role);
-      res.status(201).json(user);
+
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Error logging in after registration:", err);
+          res.status(500).json({
+            success: false,
+            message: "Registration successful but failed to log in",
+          });
+          return;
+        }
+
+        res.status(201).json({
+          success: true,
+          user,
+        });
+      });
     } catch (error) {
       console.error(`Error registering ${role}:`, error);
 
@@ -55,66 +71,77 @@ function handleRegister(role: UserRole) {
 }
 
 export const register = handleRegister(UserRole.USER);
-
 export const registerAdmin = handleRegister(UserRole.ADMIN);
 
-export async function login(req: Request, res: Response): Promise<void> {
-  try {
-    const { username, password } = req.body;
+export function login(req: Request, res: Response, next: NextFunction): void {
+  passport.authenticate(
+    "local",
+    (err: Error, user: Express.User, info: { message: string }) => {
+      if (err) {
+        console.error("Error during login:", err);
+        return res.status(500).json({
+          success: false,
+          message: "An error occurred during login",
+        });
+      }
 
-    if (!username || !password) {
-      res.status(400).json({
-        success: false,
-        message: "Username and password are required",
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          message: info?.message || "Invalid username or password",
+        });
+      }
+
+      req.login(user, (loginErr) => {
+        if (loginErr) {
+          console.error("Error during login:", loginErr);
+          return res.status(500).json({
+            success: false,
+            message: "An error occurred during login",
+          });
+        }
+
+        return res.status(200).json({
+          success: true,
+          user,
+        });
       });
-      return;
     }
+  )(req, res, next);
+}
 
-    const user = UsersService.getUserByUsername(username);
-
-    if (!user || user.password !== password) {
-      res.status(401).json({
+export function logout(req: Request, res: Response): void {
+  req.logout((err) => {
+    if (err) {
+      console.error("Error during logout:", err);
+      return res.status(500).json({
         success: false,
-        message: "Invalid username or password",
+        message: "An error occurred during logout",
       });
-      return;
     }
-
-    const { password: _, ...userWithoutPassword } = user;
 
     res.status(200).json({
       success: true,
-      user: userWithoutPassword,
+      message: "Successfully logged out",
     });
-  } catch (error) {
-    console.error("Error logging in:", error);
-    res.status(500).json({
+  });
+}
+
+export function getCurrentUser(req: Request, res: Response): void {
+  if (!req.isAuthenticated() || !req.user) {
+    res.status(401).json({
       success: false,
-      message: "Failed to log in",
+      message: "Not authenticated",
     });
+    return;
   }
-}
 
-export async function logout(req: Request, res: Response): Promise<void> {
   res.status(200).json({
     success: true,
-    message: "Successfully logged out",
+    user: req.user,
   });
 }
 
-export async function getCurrentUser(
-  req: Request,
-  res: Response
-): Promise<void> {
-  const user = req.user as User;
-  res.status(200).json({
-    success: true,
-    user: {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      instrument: user.instrument,
-    },
-  });
+export function googleAuthCallback(req: Request, res: Response): void {
+  res.redirect(req.user ? "/" : "/signin");
 }

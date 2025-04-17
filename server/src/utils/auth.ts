@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import { NextFunction, Request, Response } from "express";
-import { UserRole } from "../models/types";
+import { User, UserRole } from "../models/types";
 
 export async function hashPassword(password: string): Promise<string> {
   const salt = await bcrypt.genSalt(10);
@@ -25,8 +25,12 @@ export function isAuthenticated(
   res.status(401).json({ success: false, message: "Unauthorized" });
 }
 
-export function isAdmin(req: any, res: Response, next: NextFunction) {
-  if (req.isAuthenticated() && req.user.role === UserRole.ADMIN) {
+export function isAdmin(req: Request, res: Response, next: NextFunction) {
+  if (
+    req.isAuthenticated() &&
+    req.user &&
+    (req.user as User).role === UserRole.ADMIN
+  ) {
     return next();
   }
   res.status(403).json({ success: false, message: "Forbidden" });

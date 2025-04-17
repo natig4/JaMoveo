@@ -1,20 +1,34 @@
 import express from "express";
+import passport from "passport";
 import {
   register,
   registerAdmin,
   login,
   logout,
   getCurrentUser,
+  googleAuthCallback,
 } from "./auth.controller";
-import { isAdmin, isAuthenticated } from "../utils/auth";
 
 export const authRouter = express.Router();
 
+// Local auth routes
 authRouter.post("/register", register);
+authRouter.post("/register-admin", registerAdmin);
 authRouter.post("/login", login);
 authRouter.post("/logout", logout);
+authRouter.get("/current-user", getCurrentUser);
 
-authRouter.get("/current-user", isAuthenticated, getCurrentUser);
+// Google OAuth routes
+authRouter.get(
+  "/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
 
-// later think on how to add this: isAdmin
-authRouter.post("/register-admin", registerAdmin);
+authRouter.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    failureRedirect: "/signin",
+    session: true,
+  }),
+  googleAuthCallback
+);
