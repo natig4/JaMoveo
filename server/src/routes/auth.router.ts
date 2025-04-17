@@ -1,10 +1,20 @@
 import express from "express";
-import { login, register, registerAdmin } from "./auth.controller";
+import {
+  register,
+  registerAdmin,
+  login,
+  logout,
+  getCurrentUser,
+} from "./auth.controller";
+import { isAdmin, isAuthenticated } from "../utils/auth";
 
 export const authRouter = express.Router();
 
 authRouter.post("/register", register);
 authRouter.post("/login", login);
+authRouter.post("/logout", logout);
 
-// consider adding middleware here to check if user is admin
+authRouter.get("/current-user", isAuthenticated, getCurrentUser);
+
+// later think on how to add this: isAdmin
 authRouter.post("/register-admin", registerAdmin);

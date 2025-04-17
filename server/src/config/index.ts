@@ -3,7 +3,12 @@ interface Config {
   nodeEnv: string;
   dataPath: string;
   clientUrl: string;
+  serverUrl: string;
   corsOrigin: string[] | boolean;
+  sessionSecret: string;
+  sessionSecret2: string;
+  googleClientId: string;
+  googleClientSecret: string;
 }
 
 const development: Config = {
@@ -11,7 +16,12 @@ const development: Config = {
   nodeEnv: "development",
   dataPath: process.env.DATA_PATH || "./data",
   clientUrl: "http://localhost:5173",
+  serverUrl: "http://localhost:8000",
   corsOrigin: ["http://localhost:5173", "http://localhost:3000"],
+  sessionSecret: process.env.SESSION_SECRET || "jamoveo-secret-key-1",
+  sessionSecret2: process.env.SESSION_SECRET2 || "jamoveo-secret-key-2",
+  googleClientId: process.env.GOOGLE_CLIENT_ID || "",
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
 };
 
 const production: Config = {
@@ -19,9 +29,14 @@ const production: Config = {
   nodeEnv: "production",
   dataPath: process.env.DATA_PATH || "./data",
   clientUrl: process.env.CLIENT_URL || "https://jamoveo-8qpb.onrender.com",
+  serverUrl: process.env.SERVER_URL || "https://jamoveo-8qpb.onrender.com",
   corsOrigin: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(",")
     : ["https://jamoveo-8qpb.onrender.com"],
+  sessionSecret: process.env.SESSION_SECRET || "replace-with-secure-secret-1",
+  sessionSecret2: process.env.SESSION_SECRET2 || "replace-with-secure-secret-2",
+  googleClientId: process.env.GOOGLE_CLIENT_ID || "",
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
 };
 
 const env = process.env.NODE_ENV || "development";

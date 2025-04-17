@@ -1,6 +1,8 @@
 import { createReadStream, createWriteStream } from "fs";
 import * as path from "path";
-import { User, UserRole } from "../models/types";
+import { User, UserRole, GoogleUserProfile } from "../models/types";
+import { hashPassword } from "../utils/auth";
+import { randomUUID } from "crypto";
 
 const users: User[] = [];
 const usersFilePath = path.join(__dirname, "..", "..", "data", "users.json");
@@ -33,16 +35,20 @@ export async function loadUsers(): Promise<void> {
   });
 }
 
-export function getAllUsers(): Omit<User, "password">[] {
-  return users.map(({ id, role, username, instrument }) => ({
-    id,
-    role,
-    username,
-    instrument,
-  }));
+export function getAllUsers(): Omit<User, "password" | "googleId">[] {
+  return users.map(
+    ({ id, username, email, role, displayName, instrument }) => ({
+      id,
+      username,
+      email,
+      role,
+      displayName,
+      instrument,
+    })
+  );
 }
 
-export function getUserById(id: number): User | undefined {
+export function getUserById(id: string): User | undefined {
   return users.find((user) => user.id === id);
 }
 
@@ -50,31 +56,61 @@ export function getUserByUsername(username: string): User | undefined {
   return users.find((user) => user.username === username);
 }
 
+export function getUserByGoogleId(googleId: string): User | undefined {
+  return users.find((user) => user.googleId === googleId);
+}
+
+export async function findOrCreateGoogleUser(
+  profile: GoogleUserProfile
+): Promise<User> {
+  let user = getUserByGoogleId(profile.googleId);
+
+  if (user) {
+    return user;
+  }
+
+  if (profile.email) {
+    user = users.find((u) => u.email === profile.email);
+
+    if (user) {
+      user.googleId = profile.googleId;
+      await saveUsers();
+      return user;
+    }
+  }
+
+  return addUser({
+    username: profile.username,
+    email: profile.email,
+    googleId: profile.googleId,
+    displayName: profile.displayName,
+    role: profile.role,
+  });
+}
+
 export async function addUser(userData: Omit<User, "id">): Promise<User> {
   if (getUserByUsername(userData.username)) {
     throw new Error("Username already exists");
   }
 
-  const newId =
-    users.length > 0
-      ? Math.max(
-          ...users.map((u) =>
-            typeof u.id === "number" ? u.id : parseInt(String(u.id))
-          )
-        ) + 1
-      : 1;
+  if (userData.email && users.some((u) => u.email === userData.email)) {
+    throw new Error("Email already exists");
+  }
 
-  // TODO:need to salt the password
+  const hashedPassword = await hashPassword(userData.password as string);
 
   const newUser: User = {
     ...userData,
-    id: newId,
+    id: randomUUID(),
     role: userData.role || UserRole.USER,
+    password: hashedPassword,
   };
 
   users.push(newUser);
   await saveUsers();
-  return newUser;
+
+  const { password: _, ...userWithoutPassword } = newUser;
+  return userWithoutPassword as User;
 }
 
 async function saveUsers(): Promise<void> {
@@ -105,15 +141,4 @@ async function saveUsers(): Promise<void> {
     console.error("Error saving users:", error);
     throw new Error("Failed to save users data");
   }
-}
-
-export function validateUserCredentials(
-  username: string,
-  password: string
-): User | undefined {
-  const user = getUserByUsername(username);
-  if (!user || user.password !== password) {
-    return undefined;
-  }
-  return user;
 }

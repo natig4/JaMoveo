@@ -1,5 +1,5 @@
 export interface Song {
-  id: number;
+  id: string;
   title: string;
   artist: string;
   imageUrl?: string;
@@ -13,11 +13,19 @@ export interface SongItem {
   chords?: string;
 }
 
-export interface User {
-  id: number;
-  role: UserRole;
+export interface UserCredentials {
   username: string;
-  password: string;
+  password?: string;
+}
+
+export interface User {
+  id: string;
+  username: string;
+  email?: string;
+  password?: string;
+  googleId?: string;
+  displayName?: string;
+  role: UserRole;
   instrument?: string;
 }
 
@@ -27,3 +35,11 @@ export const UserRole = {
 } as const;
 
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
+
+export interface GoogleUserProfile {
+  googleId: string;
+  username: string;
+  email?: string;
+  displayName?: string;
+  role: UserRole;
+}

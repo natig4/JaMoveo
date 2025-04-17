@@ -1,6 +1,7 @@
 import { createReadStream, createWriteStream } from "fs";
 import path from "path";
 import { Song } from "../models/types";
+import { randomUUID } from "crypto";
 
 const songs: Song[] = [];
 const songsFilePath = path.join(__dirname, "..", "..", "data", "songs.json");
@@ -37,23 +38,14 @@ export function getAllSongs(): Song[] {
   return songs;
 }
 
-export function getSongById(id: number): Song | undefined {
+export function getSongById(id: string): Song | undefined {
   return songs.find((song) => song.id === id);
 }
 
 export async function addSong(song: Omit<Song, "id">): Promise<Song> {
-  const newId =
-    songs.length > 0
-      ? Math.max(
-          ...songs.map((s) =>
-            typeof s.id === "number" ? s.id : parseInt(s.id)
-          )
-        ) + 1
-      : 1;
-
   const newSong: Song = {
     ...song,
-    id: newId,
+    id: randomUUID(),
   };
 
   songs.push(newSong);

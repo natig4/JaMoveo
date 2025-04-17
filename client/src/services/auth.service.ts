@@ -1,4 +1,4 @@
-import { User, UserCredentials } from "../model/types";
+import { User } from "../model/types";
 
 const API_URL =
   import.meta.env.VITE_API_URL ||
@@ -10,53 +10,90 @@ function getConfig<T>(data: T): RequestInit {
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
     body: JSON.stringify(data),
   };
 }
 
-async function postRequest<TInput, TOutput>(
-  endpoint: string,
-  data: TInput,
-  defaultErrorMessage: string
-): Promise<TOutput> {
-  try {
-    const response = await fetch(`${API_URL}/auth${endpoint}`, getConfig(data));
+interface AuthResponse {
+  success: boolean;
+  user?: User;
+  message?: string;
+}
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || defaultErrorMessage);
-    }
+export async function register(
+  username: string,
+  password: string,
+  email?: string,
+  instrument?: string
+): Promise<User> {
+  const response = await fetch(
+    `${API_URL}/auth/register`,
+    getConfig({ username, password, email, instrument })
+  );
 
-    return await response.json();
-  } catch (error) {
-    throw error instanceof Error ? error : new Error(defaultErrorMessage);
+  const data = (await response.json()) as AuthResponse;
+
+  if (!response.ok) {
+    throw new Error(data.message || "Registration failed");
+  }
+
+  if (!data.user) {
+    throw new Error("User data missing in response");
+  }
+
+  return data.user;
+}
+
+export async function login(username: string, password: string): Promise<User> {
+  const response = await fetch(
+    `${API_URL}/auth/login`,
+    getConfig({ username, password })
+  );
+
+  const data = (await response.json()) as AuthResponse;
+
+  if (!response.ok) {
+    throw new Error(data.message || "Login failed");
+  }
+
+  if (!data.user) {
+    throw new Error("User data missing in response");
+  }
+
+  return data.user;
+}
+
+export async function logout(): Promise<void> {
+  const response = await fetch(`${API_URL}/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.message || "Logout failed");
   }
 }
 
-export function login(credentials: UserCredentials): Promise<User> {
-  return postRequest<UserCredentials, User>(
-    "/login",
-    credentials,
-    "Login failed"
-  );
+export async function getCurrentUser(): Promise<User | null> {
+  try {
+    const response = await fetch(`${API_URL}/auth/current-user`, {
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = (await response.json()) as AuthResponse;
+    return data.user || null;
+  } catch (error) {
+    console.error("Error getting current user:", error);
+    return null;
+  }
 }
 
-export function register(
-  userData: Omit<User, "id" | "role"> & { password: string }
-): Promise<User> {
-  return postRequest<typeof userData, User>(
-    "/register",
-    userData,
-    "Registration failed"
-  );
-}
-
-export function registerAdmin(
-  userData: Omit<User, "id" | "role"> & { password: string }
-): Promise<User> {
-  return postRequest<typeof userData, User>(
-    "/register-admin",
-    userData,
-    "Registration failed"
-  );
+export function getGoogleAuthUrl(): string {
+  return `${API_URL}/auth/google`;
 }

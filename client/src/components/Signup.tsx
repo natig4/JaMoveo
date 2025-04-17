@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../hooks/redux-hooks";
-import { loginUser, clearError } from "../store/auth-slice";
-import AuthForm from "../components/AuthForm";
+import { registerUser, clearError } from "../store/auth-slice";
+import AuthForm from "./AuthForm";
 import { getGoogleAuthUrl } from "../services/auth.service";
 
-function SigninPage() {
+function SignupPage({ isAdmin }: { isAdmin: boolean }) {
   const { loading, error, isAuthenticated } = useAppSelector(
     (state) => state.auth
   );
@@ -24,17 +24,22 @@ function SigninPage() {
     dispatch(clearError());
   }, [isAuthenticated, navigate, dispatch]);
 
-  const handleSubmit = async (username: string, password: string) => {
+  const handleSubmit = async (
+    username: string,
+    password: string,
+    email?: string,
+    instrument?: string
+  ) => {
     if (!username.trim() || !password.trim()) {
       return;
     }
 
-    await dispatch(loginUser({ username, password }));
+    await dispatch(registerUser({ username, password, email, instrument }));
   };
 
   return (
     <AuthForm
-      formType='signin'
+      formType={isAdmin ? "signup-admin" : "signup"}
       onSubmit={handleSubmit}
       isLoading={loading}
       error={error}
@@ -43,4 +48,4 @@ function SigninPage() {
   );
 }
 
-export default SigninPage;
+export default SignupPage;

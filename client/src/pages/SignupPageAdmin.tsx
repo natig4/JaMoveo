@@ -1,4 +1,4 @@
-import SignupPage from "../components/SignupPage";
+import SignupPage from "../components/Signup";
 
 function SignupPageAdmin() {
   return <SignupPage isAdmin={true} />;

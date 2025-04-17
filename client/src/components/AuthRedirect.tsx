@@ -1,35 +1,28 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "../hooks/redux-hooks";
-import { login } from "../store/auth-slice";
-import { User } from "../model/types";
+import { fetchCurrentUser } from "../store/auth-slice";
 
 interface AuthRedirectProps {
   children: React.ReactNode;
 }
 
 function AuthRedirect({ children }: AuthRedirectProps) {
-  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, loading } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  // Check if the user is already authenticated (from localStorage or Redux)
   useEffect(() => {
-    // First, try to restore auth state from localStorage if not authenticated
-    if (!isAuthenticated) {
-      const storedUser = localStorage.getItem("user");
-      if (storedUser) {
-        try {
-          const user = JSON.parse(storedUser) as User;
-          dispatch(login(user));
-        } catch {
-          localStorage.removeItem("user");
-        }
-      }
-    } else {
+    if (!isAuthenticated && !loading) {
+      dispatch(fetchCurrentUser());
+    } else if (isAuthenticated) {
       navigate("/");
     }
-  }, [dispatch, isAuthenticated, navigate]);
+  }, [dispatch, isAuthenticated, loading, navigate]);
+
+  if (loading) {
+    return <div className='auth-loading'>Loading...</div>;
+  }
 
   return <>{!isAuthenticated && children}</>;
 }

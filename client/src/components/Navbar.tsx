@@ -1,15 +1,16 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAppSelector, useAppDispatch } from "../hooks/redux-hooks";
-import { logout } from "../store/auth-slice";
+import { logoutUser } from "../store/auth-slice";
 
 function Navbar() {
-  const { isAuthenticated, user } = useAppSelector((state) => state.auth);
+  const { isAuthenticated, user, loading } = useAppSelector(
+    (state) => state.auth
+  );
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    dispatch(logout());
-    localStorage.removeItem("user");
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
     navigate("/signin");
   };
 
@@ -20,15 +21,17 @@ function Navbar() {
       </div>
 
       <div className='nav-links'>
-        {isAuthenticated ? (
+        {isAuthenticated && user ? (
           <>
             <span className='welcome-text'>
-              Welcome, {user?.username}!
-              {user?.role === "admin" && (
+              Welcome, {user.username}!
+              {user.role === "admin" && (
                 <span className='admin-badge'> (Admin)</span>
               )}
             </span>
-            <button onClick={handleLogout}>Logout</button>
+            <button onClick={handleLogout} disabled={loading}>
+              {loading ? "Logging out..." : "Logout"}
+            </button>
           </>
         ) : (
           <Link to='/signup' className='nav-link'>

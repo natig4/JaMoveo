@@ -1,5 +1,5 @@
 export interface User {
-  id: number;
+  id: string;
   username: string;
   role: UserRole;
   instrument?: string;
@@ -18,7 +18,7 @@ export interface SongItem {
 export type SongLine = SongItem[];
 
 export interface Song {
-  id: number;
+  id: string;
   title: string;
   artist: string;
   imageUrl?: string;

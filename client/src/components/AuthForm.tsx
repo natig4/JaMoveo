@@ -7,31 +7,34 @@ interface AuthFormProps {
   onSubmit: (
     username: string,
     password: string,
+    email?: string,
     instrument?: string
-  ) => Promise<void>;
+  ) => void;
   isLoading: boolean;
   error: string | null;
+  googleAuthUrl: string;
 }
 
-function AuthForm({ formType, onSubmit, isLoading, error }: AuthFormProps) {
+function AuthForm({
+  formType,
+  onSubmit,
+  isLoading,
+  error,
+  googleAuthUrl,
+}: AuthFormProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
   const [instrument, setInstrument] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
   const isLogin = formType === "signin";
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    try {
-      if (isLogin) {
-        await onSubmit(username, password);
-      } else {
-        await onSubmit(username, password, instrument);
-      }
-    } catch (error) {
-      console.error("Form submission error:", error);
+    if (isLogin) {
+      onSubmit(username, password);
+    } else {
+      onSubmit(username, password, email, instrument);
     }
   };
 
@@ -54,13 +57,11 @@ function AuthForm({ formType, onSubmit, isLoading, error }: AuthFormProps) {
           </h1>
         </div>
 
-        {error && <div className='error-message'>{error}</div>}
+        {error && <div className='error'>{error}</div>}
 
         <form onSubmit={handleSubmit} className='auth-form'>
           <div className='form-group'>
-            <label htmlFor='username'>
-              {!isLogin ? "Username*" : "Enter your Username*"}
-            </label>
+            <label htmlFor='username'>Username*</label>
             <input
               type='text'
               id='username'
@@ -68,9 +69,21 @@ function AuthForm({ formType, onSubmit, isLoading, error }: AuthFormProps) {
               onChange={(e) => setUsername(e.target.value)}
               placeholder={!isLogin ? "Select your username" : "Username"}
               required
-              className='form-control'
             />
           </div>
+
+          {!isLogin && (
+            <div className='form-group'>
+              <label htmlFor='email'>Email</label>
+              <input
+                type='email'
+                id='email'
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder='Your email address'
+              />
+            </div>
+          )}
 
           {!isLogin && (
             <div className='form-group'>
@@ -81,7 +94,6 @@ function AuthForm({ formType, onSubmit, isLoading, error }: AuthFormProps) {
                   value={instrument}
                   onChange={(e) => setInstrument(e.target.value)}
                   required
-                  className='form-control'
                 >
                   <option value='' disabled>
                     Select your instrument
@@ -100,7 +112,7 @@ function AuthForm({ formType, onSubmit, isLoading, error }: AuthFormProps) {
 
           <div className='form-group'>
             <label htmlFor='password'>
-              {!isLogin ? "Create password*" : "Enter your Password*"}
+              {!isLogin ? "Create password*" : "Password*"}
             </label>
             <div className='password-input'>
               <input
@@ -108,9 +120,8 @@ function AuthForm({ formType, onSubmit, isLoading, error }: AuthFormProps) {
                 id='password'
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={!isLogin ? "Your Password" : "Password"}
+                placeholder='Your Password'
                 required
-                className='form-control'
               />
               <button
                 type='button'
@@ -127,21 +138,18 @@ function AuthForm({ formType, onSubmit, isLoading, error }: AuthFormProps) {
             </div>
           </div>
 
-          {isLogin && (
-            <div className='form-options'>
-              <div className='remember-me'>
-                <input type='checkbox' id='remember-me' />
-                <label htmlFor='remember-me'>Remember me</label>
-              </div>
-              <Link to='/forgot-password' className='forgot-password'>
-                Forgot Password?
-              </Link>
-            </div>
-          )}
-
           <button type='submit' className='auth-button' disabled={isLoading}>
-            {isLoading ? "Loading..." : !isLogin ? "Register" : "Log In"}
+            {isLoading ? "Loading..." : !isLogin ? "Register" : "Sign In"}
           </button>
+
+          <div className='auth-separator'>
+            <span>OR</span>
+          </div>
+
+          <a href={googleAuthUrl} className='google-auth-button'>
+            <span className='google-icon'>G</span>
+            {!isLogin ? "Sign up with Google" : "Sign in with Google"}
+          </a>
         </form>
 
         <div className='auth-alt-action'>

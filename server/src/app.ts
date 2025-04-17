@@ -1,7 +1,9 @@
 import express, { Request, Response, NextFunction } from "express";
-import helmet from "helmet";
-import cors from "cors";
 import { join } from "path";
+import cors from "cors";
+import helmet from "helmet";
+import cookieSession from "cookie-session";
+import passport from "./config/passport";
 import config from "./config/index";
 import { authRouter } from "./routes/auth.router";
 import { songsRouter } from "./routes/songs.router";
@@ -15,8 +17,23 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: config.corsOrigin,
+    credentials: true,
   })
 );
+
+app.use(
+  cookieSession({
+    name: "session",
+    keys: [config.sessionSecret, config.sessionSecret2],
+    maxAge: 24 * 60 * 60 * 1000,
+    secure: config.nodeEnv === "production",
+    httpOnly: true,
+    sameSite: config.nodeEnv === "production" ? "none" : "lax",
+  })
+);
+
+app.use(passport.initialize());
+app.use(passport.session());
 
 // TODO: remember to remove it once I finish
 app.use((req: Request, _res: Response, next: NextFunction) => {

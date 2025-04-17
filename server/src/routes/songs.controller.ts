@@ -17,7 +17,7 @@ export async function getAllSongs(_req: Request, res: Response): Promise<void> {
 export async function getSongById(req: Request, res: Response): Promise<void> {
   try {
     const { id } = req.params;
-    const song = SongsService.getSongById(+id);
+    const song = SongsService.getSongById(id);
 
     if (!song) {
       res.status(404).json({
