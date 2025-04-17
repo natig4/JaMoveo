@@ -19,8 +19,6 @@ app.use(
   cors({
     origin: config.corsOrigin,
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
@@ -63,11 +61,13 @@ if (config.nodeEnv === "development") {
 app.use("/auth", authRouter);
 app.use("/song", songsRouter);
 
-app.use(express.static(join(__dirname, "../../client/dist")));
+if (config.nodeEnv === "production") {
+  app.use(express.static(join(__dirname, "../../client/dist")));
 
-app.get("*", (_req: Request, res: Response) => {
-  res.sendFile(join(__dirname, "../../client/dist/index.html"));
-});
+  app.get("*", (_req: Request, res: Response) => {
+    res.sendFile(join(__dirname, "../../client/dist/index.html"));
+  });
+}
 
 app.use((_req: Request, res: Response) => {
   res.status(404).json({
@@ -76,12 +76,37 @@ app.use((_req: Request, res: Response) => {
   });
 });
 
-app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
-  console.error("Error:", err);
+interface ErrorWithMessage {
+  message: string;
+}
+
+function isErrorWithMessage(error: unknown): error is ErrorWithMessage {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof (error as Record<string, unknown>).message === "string"
+  );
+}
+
+function toErrorWithMessage(maybeError: unknown): ErrorWithMessage {
+  if (isErrorWithMessage(maybeError)) return maybeError;
+
+  try {
+    return new Error(JSON.stringify(maybeError));
+  } catch {
+    return new Error(String(maybeError));
+  }
+}
+
+app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+  const error = toErrorWithMessage(err);
+  console.error("Error:", error);
+
   res.status(500).json({
     success: false,
     error: "Internal Server Error",
-    message: config.nodeEnv === "development" ? err.message : undefined,
+    message: config.nodeEnv === "development" ? error.message : undefined,
   });
 });
 
