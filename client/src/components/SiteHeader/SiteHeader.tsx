@@ -1,8 +1,11 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useAppSelector, useAppDispatch } from "../hooks/redux-hooks";
-import { logoutUser } from "../store/auth-slice";
+import { useAppSelector, useAppDispatch } from "../../hooks/redux-hooks";
+import { logoutUser } from "../../store/auth-slice";
 
-function Navbar() {
+import styles from "./SiteHeader.module.scss";
+import Logo from "../Logo/Logo";
+
+function SiteHeader() {
   const { isAuthenticated, user, loading } = useAppSelector(
     (state) => state.auth
   );
@@ -15,10 +18,10 @@ function Navbar() {
   };
 
   return (
-    <nav className='navbar'>
-      <div className='logo'>
-        <Link to='/'>JaMoveo</Link>
-      </div>
+    <header className={styles.header}>
+      <Link to='/'>
+        <Logo />
+      </Link>
 
       <div className='nav-links'>
         {isAuthenticated && user ? (
@@ -39,8 +42,8 @@ function Navbar() {
           </Link>
         )}
       </div>
-    </nav>
+    </header>
   );
 }
 
-export default Navbar;
+export default SiteHeader;

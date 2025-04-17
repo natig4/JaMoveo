@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 
 import { fetchCurrentUser } from "./store/auth-slice";
 import { AppDispatch, RootState } from "./store";
-import Navbar from "./components/Navbar";
+import SiteHeader from "./components/SiteHeader/SiteHeader";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AuthRedirect from "./components/AuthRedirect";
 import SignupPage from "./pages/SignupPage";
@@ -55,7 +55,7 @@ function App() {
           path='/'
           element={
             <ProtectedRoute>
-              <Navbar />
+              <SiteHeader />
               <PlayerPage />
             </ProtectedRoute>
           }
