@@ -1,4 +1,4 @@
-export interface User {
+export interface IUser {
   id: string;
   username: string;
   role: UserRole;
@@ -6,19 +6,19 @@ export interface User {
   imageUrl?: string;
 }
 
-export interface UserCredentials {
+export interface IUserCredentials {
   username: string;
   password: string;
 }
 
-export interface SongItem {
+export interface ISongItem {
   lyrics: string;
   chords?: string;
 }
 
-export type SongLine = SongItem[];
+export type SongLine = ISongItem[];
 
-export interface Song {
+export interface ISong {
   id: string;
   title: string;
   artist: string;

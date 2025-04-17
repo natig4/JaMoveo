@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import passport from "passport";
 import * as UsersService from "../services/users.service";
-import { User, UserRole } from "../models/types";
+import { IUser, UserRole } from "../models/types";
 
 // Default session options - 24 hours
 const DEFAULT_SESSION_OPTIONS = {
@@ -13,7 +13,7 @@ const EXTENDED_SESSION_OPTIONS = {
   maxAge: 30 * 24 * 60 * 60 * 1000,
 };
 
-async function registerUser(userData: Omit<User, "id">, role: UserRole) {
+async function registerUser(userData: Omit<IUser, "id">, role: UserRole) {
   if (!userData.username || !userData.password) {
     throw new Error("Username and password are required");
   }

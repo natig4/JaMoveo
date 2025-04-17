@@ -1,9 +1,9 @@
 import { createReadStream, createWriteStream } from "fs";
 import path from "path";
-import { Song } from "../models/types";
+import { ISong } from "../models/types";
 import { randomUUID } from "crypto";
 
-const songs: Song[] = [];
+const songs: ISong[] = [];
 const songsFilePath = path.join(__dirname, "..", "..", "data", "songs.json");
 
 export async function loadSongs(): Promise<void> {
@@ -34,16 +34,16 @@ export async function loadSongs(): Promise<void> {
   });
 }
 
-export function getAllSongs(): Song[] {
+export function getAllSongs(): ISong[] {
   return songs;
 }
 
-export function getSongById(id: string): Song | undefined {
+export function getSongById(id: string): ISong | undefined {
   return songs.find((song) => song.id === id);
 }
 
-export async function addSong(song: Omit<Song, "id">): Promise<Song> {
-  const newSong: Song = {
+export async function addSong(song: Omit<ISong, "id">): Promise<ISong> {
+  const newSong: ISong = {
     ...song,
     id: randomUUID(),
   };
@@ -86,7 +86,7 @@ async function saveSongs(): Promise<void> {
   });
 }
 
-export function searchSongs(query: string): Song[] {
+export function searchSongs(query: string): ISong[] {
   const lowercaseQuery = query.toLowerCase();
 
   return songs.filter((song) => {

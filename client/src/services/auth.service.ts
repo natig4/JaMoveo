@@ -1,23 +1,9 @@
-import { User } from "../model/types";
-
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.MODE === "development" ? "http://localhost:8000" : "");
-
-export function getConfig<T>(data: T, method: string = "POST"): RequestInit {
-  return {
-    method: method,
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include", // Important for cookies
-    body: JSON.stringify(data),
-  };
-}
+import { IUser } from "../model/types";
+import { API_URL, getConfig } from "./helpers.service";
 
 interface AuthResponse {
   success: boolean;
-  user?: User;
+  user?: IUser;
   message?: string;
 }
 
@@ -26,7 +12,7 @@ export async function register(
   password: string,
   email?: string,
   instrument?: string
-): Promise<User> {
+): Promise<IUser> {
   const response = await fetch(
     `${API_URL}/auth/register`,
     getConfig({ username, password, email, instrument })
@@ -39,7 +25,7 @@ export async function register(
   }
 
   if (!data.user) {
-    throw new Error("User data missing in response");
+    throw new Error("IUser data missing in response");
   }
 
   return data.user;
@@ -50,7 +36,7 @@ export async function registerAdmin(
   password: string,
   email?: string,
   instrument?: string
-): Promise<User> {
+): Promise<IUser> {
   const response = await fetch(
     `${API_URL}/auth/register-admin`,
     getConfig({ username, password, email, instrument })
@@ -63,7 +49,7 @@ export async function registerAdmin(
   }
 
   if (!data.user) {
-    throw new Error("User data missing in response");
+    throw new Error("IUser data missing in response");
   }
 
   return data.user;
@@ -73,7 +59,7 @@ export async function login(
   username: string,
   password: string,
   rememberMe: boolean = false
-): Promise<User> {
+): Promise<IUser> {
   const response = await fetch(
     `${API_URL}/auth/login`,
     getConfig({ username, password, rememberMe })
@@ -86,7 +72,7 @@ export async function login(
   }
 
   if (!data.user) {
-    throw new Error("User data missing in response");
+    throw new Error("IUser data missing in response");
   }
 
   return data.user;
@@ -104,7 +90,7 @@ export async function logout(): Promise<void> {
   }
 }
 
-export async function getCurrentUser(): Promise<User | null> {
+export async function getCurrentUser(): Promise<IUser | null> {
   try {
     const response = await fetch(`${API_URL}/auth/current-user`, {
       credentials: "include",

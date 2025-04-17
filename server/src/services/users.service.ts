@@ -1,10 +1,10 @@
 import { createReadStream, createWriteStream } from "fs";
 import * as path from "path";
-import { User, UserRole, GoogleUserProfile } from "../models/types";
+import { IUser, UserRole, IGoogleUserProfile } from "../models/types";
 import { hashPassword } from "../utils/auth";
 import { randomUUID } from "crypto";
 
-const users: User[] = [];
+const users: IUser[] = [];
 const usersFilePath = path.join(__dirname, "..", "..", "data", "users.json");
 
 export async function loadUsers(): Promise<void> {
@@ -35,7 +35,7 @@ export async function loadUsers(): Promise<void> {
   });
 }
 
-export function getAllUsers(): Omit<User, "password" | "googleId">[] {
+export function getAllUsers(): Omit<IUser, "password" | "googleId">[] {
   return users.map(
     ({ id, username, email, role, displayName, instrument }) => ({
       id,
@@ -48,25 +48,25 @@ export function getAllUsers(): Omit<User, "password" | "googleId">[] {
   );
 }
 
-export function getUserById(id: string): User | undefined {
+export function getUserById(id: string): IUser | undefined {
   return users.find((user) => String(user.id) === String(id));
 }
 
-export function getUserByUsername(username: string): User | undefined {
+export function getUserByUsername(username: string): IUser | undefined {
   return users.find((user) => user.username === username);
 }
 
-export function getUserByGoogleId(googleId: string): User | undefined {
+export function getUserByGoogleId(googleId: string): IUser | undefined {
   return users.find((user) => user.googleId === googleId);
 }
 
-export function getUserByEmail(email: string): User | undefined {
+export function getUserByEmail(email: string): IUser | undefined {
   return users.find((user) => user.email === email);
 }
 
 export async function findOrCreateGoogleUser(
-  profile: GoogleUserProfile
-): Promise<User> {
+  profile: IGoogleUserProfile
+): Promise<IUser> {
   // First, check if user already exists with this Google ID
   let user = getUserByGoogleId(profile.googleId);
   if (user) {
@@ -95,7 +95,7 @@ export async function findOrCreateGoogleUser(
   });
 }
 
-export async function addUser(userData: Omit<User, "id">): Promise<User> {
+export async function addUser(userData: Omit<IUser, "id">): Promise<IUser> {
   if (getUserByUsername(userData.username)) {
     throw new Error("Username already exists");
   }
@@ -104,7 +104,7 @@ export async function addUser(userData: Omit<User, "id">): Promise<User> {
     throw new Error("Email already exists");
   }
 
-  const newUser: User = {
+  const newUser: IUser = {
     ...userData,
     id: randomUUID(),
     role: userData.role || UserRole.USER,
@@ -119,13 +119,13 @@ export async function addUser(userData: Omit<User, "id">): Promise<User> {
   await saveUsers();
 
   const { password, ...userWithoutPassword } = newUser;
-  return userWithoutPassword as User;
+  return userWithoutPassword as IUser;
 }
 
 export async function updateUser(
   userId: string,
-  userData: Partial<User>
-): Promise<Omit<User, "password" | "googleId"> | null> {
+  userData: Partial<IUser>
+): Promise<Omit<IUser, "password" | "googleId"> | null> {
   const userIndex = users.findIndex(
     (user) => String(user.id) === String(userId)
   );

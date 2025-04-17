@@ -1,20 +1,16 @@
-import { User } from "../model/types";
-import { getConfig } from "./auth.service";
-
-const API_URL =
-  import.meta.env.VITE_API_URL ||
-  (import.meta.env.MODE === "development" ? "http://localhost:8000" : "");
+import { IUser } from "../model/types";
+import { API_URL, getConfig } from "./helpers.service";
 
 interface ApiResponse {
   success: boolean;
-  user?: User;
+  user?: IUser;
   message?: string;
 }
 
 export async function updateUserProfile(
   userId: string,
-  userData: Partial<User>
-): Promise<User> {
+  userData: Partial<IUser>
+): Promise<IUser> {
   const response = await fetch(
     `${API_URL}/users/${userId}`,
     getConfig(userData, "PATCH")
@@ -27,7 +23,7 @@ export async function updateUserProfile(
   }
 
   if (!data.user) {
-    throw new Error("User data missing in response");
+    throw new Error("IUser data missing in response");
   }
 
   return data.user;

@@ -1,11 +1,11 @@
 import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
-import { User } from "../model/types";
+import { IUser } from "../model/types";
 import * as authService from "../services/auth.service";
 import * as userService from "../services/users.service";
 
 interface AuthState {
   isAuthenticated: boolean;
-  user: User | null;
+  user: IUser | null;
   loading: boolean;
   error: string | null;
   initialized: boolean;
@@ -150,7 +150,7 @@ export const updateUserProfile = createAsyncThunk(
       userData,
     }: {
       userId: string;
-      userData: Partial<User>;
+      userData: Partial<IUser>;
     },
     { rejectWithValue }
   ) => {
@@ -181,7 +181,7 @@ const authSlice = createSlice({
     });
     builder.addCase(
       registerUser.fulfilled,
-      (state, action: PayloadAction<User>) => {
+      (state, action: PayloadAction<IUser>) => {
         state.isAuthenticated = true;
         state.user = action.payload;
         state.loading = false;
@@ -201,7 +201,7 @@ const authSlice = createSlice({
     });
     builder.addCase(
       registerAdminUser.fulfilled,
-      (state, action: PayloadAction<User>) => {
+      (state, action: PayloadAction<IUser>) => {
         state.isAuthenticated = true;
         state.user = action.payload;
         state.loading = false;
@@ -221,7 +221,7 @@ const authSlice = createSlice({
     });
     builder.addCase(
       loginUser.fulfilled,
-      (state, action: PayloadAction<User>) => {
+      (state, action: PayloadAction<IUser>) => {
         state.isAuthenticated = true;
         state.user = action.payload;
         state.loading = false;
@@ -255,7 +255,7 @@ const authSlice = createSlice({
     });
     builder.addCase(
       fetchCurrentUser.fulfilled,
-      (state, action: PayloadAction<User | null>) => {
+      (state, action: PayloadAction<IUser | null>) => {
         state.isAuthenticated = !!action.payload;
         state.user = action.payload;
         state.loading = false;
@@ -278,7 +278,7 @@ const authSlice = createSlice({
     });
     builder.addCase(
       updateUserProfile.fulfilled,
-      (state, action: PayloadAction<User>) => {
+      (state, action: PayloadAction<IUser>) => {
         state.user = action.payload;
         state.loading = false;
         state.error = null;

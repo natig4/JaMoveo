@@ -1,10 +1,10 @@
-import { Song } from "../../model/types";
+import { ISong } from "../../model/types";
 
 export default function MusicPlayer({
   song,
   instrument,
 }: {
-  song: Song;
+  song: ISong;
   instrument?: string;
 }) {
   console.log("song", song);

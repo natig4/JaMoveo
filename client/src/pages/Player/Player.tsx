@@ -4,11 +4,12 @@ import { PiMusicNoteSimpleFill } from "react-icons/pi";
 
 import styles from "./Player.module.scss";
 import AdminPlayer from "../../components/AdminPlayer/AdminPlayer";
-// import MusicPlayer from "../../components/MusicPlayer/MusicPlayer";
+import MusicPlayer from "../../components/MusicPlayer/MusicPlayer";
+import { UserRole } from "../../model/types";
 
 function PlayerPage() {
   const { user } = useAppSelector((state) => state.auth);
-  const noSong = true;
+  const { currentSong } = useAppSelector((state) => state.songs);
 
   const noSongMessage = (
     <div className={styles.noSongContainer}>
@@ -21,13 +22,16 @@ function PlayerPage() {
   );
 
   return (
-    <div className={`${styles.container} ${noSong ? styles.loading : ""}`}>
-      {
-        noSong ? noSongMessage : null
-        // <MusicPlayer song={song} instrument={user!.instrument}/>
-      }
+    <div
+      className={`${styles.container} ${!currentSong ? styles.loading : ""}`}
+    >
+      {!currentSong && user?.role === UserRole.USER
+        ? noSongMessage
+        : currentSong && (
+            <MusicPlayer song={currentSong} instrument={user?.instrument} />
+          )}
 
-      {user?.role === "admin" && <AdminPlayer />}
+      {!currentSong && user?.role === UserRole.ADMIN && <AdminPlayer />}
     </div>
   );
 }
