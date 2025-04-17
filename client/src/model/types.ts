@@ -3,6 +3,7 @@ export interface User {
   username: string;
   role: UserRole;
   instrument?: string;
+  imageUrl?: string;
 }
 
 export interface UserCredentials {

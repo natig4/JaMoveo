@@ -1,47 +1,28 @@
-import { Link, useNavigate } from "react-router-dom";
-import { useAppSelector, useAppDispatch } from "../../hooks/redux-hooks";
-import { logoutUser } from "../../store/auth-slice";
+import { Link } from "react-router-dom";
+import { useAppSelector } from "../../hooks/redux-hooks";
+// import { logoutUser } from "../../store/auth-slice";
 
 import styles from "./SiteHeader.module.scss";
 import Logo from "../Logo/Logo";
+import Avatar from "../Avatar/Avatar";
 
 function SiteHeader() {
-  const { isAuthenticated, user, loading } = useAppSelector(
-    (state) => state.auth
-  );
-  const dispatch = useAppDispatch();
-  const navigate = useNavigate();
+  const { user } = useAppSelector((state) => state.auth);
+  // const dispatch = useAppDispatch();
+  // const navigate = useNavigate();
 
-  const handleLogout = async () => {
-    await dispatch(logoutUser());
-    navigate("/signin");
-  };
+  // const handleLogout = async () => {
+  //   await dispatch(logoutUser());
+  //   navigate("/signin");
+  // };
 
   return (
     <header className={styles.header}>
       <Link to='/'>
-        <Logo />
+        <Logo color='#FFCD29' className={`${styles.logo} bebas-neue-regular`} />
       </Link>
 
-      <div className='nav-links'>
-        {isAuthenticated && user ? (
-          <>
-            <span className='welcome-text'>
-              Welcome, {user.username}!
-              {user.role === "admin" && (
-                <span className='admin-badge'> (Admin)</span>
-              )}
-            </span>
-            <button onClick={handleLogout} disabled={loading}>
-              {loading ? "Logging out..." : "Logout"}
-            </button>
-          </>
-        ) : (
-          <Link to='/signup' className='nav-link'>
-            Sign Up
-          </Link>
-        )}
-      </div>
+      <Avatar imageUrl={user?.imageUrl} alt={user?.username} />
     </header>
   );
 }
