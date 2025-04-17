@@ -15,6 +15,18 @@
   justify-content: center;
   justify-self: center;
   min-width: 60%;
+
+  .logo {
+    display: none;
+    font-size: 5rem;
+    font-weight: 600;
+    color: black;
+    padding: 4rem 0;
+  }
+}
+
+.logo {
+  font-size: 5rem;
 }
 
 .image {
@@ -30,10 +42,11 @@
   }
   .logo {
     position: absolute;
-    font-size: 5rem;
+    font-weight: 400;
     color: white;
     bottom: 0;
     right: 2.4rem;
+    padding: 0;
   }
 }
 
@@ -111,7 +124,7 @@
   }
 
   &:disabled {
-    background-color: #fde68a;
+    opacity: 0.8;
     cursor: not-allowed;
   }
 }
@@ -132,14 +145,10 @@
   }
 }
 
-.errorMessage {
-  color: #e53e3e;
-  font-size: 1.6rem;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  background-color: #fff5f5;
-  border: 1px solid #fed7d7;
-  border-radius: 0.375rem;
+@media (max-width: variables.$breakpoint-lg) {
+  .content {
+    min-width: 100%;
+  }
 }
 
 @media (max-width: variables.$breakpoint-sm) {
@@ -149,11 +158,14 @@
   }
 
   .content {
+    justify-content: flex-start;
     padding: 2rem;
-    max-width: 100%;
+    .logo {
+      display: block;
+    }
   }
 
   .image {
-    height: 30vh;
+    display: none;
   }
 }

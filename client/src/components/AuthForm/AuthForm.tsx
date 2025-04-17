@@ -113,6 +113,7 @@ function AuthForm({
   return (
     <div className={styles.container}>
       <div className={styles.content}>
+        <Logo color='#000' className={`${styles.logo} bebas-neue-regular`} />
         <div className={styles.header}>
           <h2>Welcome to JaMoveo</h2>
           <h1>{getHeaderTitle()}</h1>
