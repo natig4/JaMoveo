@@ -1,34 +1,48 @@
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
 import { fetchSongs } from "../../store/songs-slice";
+import SearchSongs from "../SearchSongs/SearchSongs";
 import styles from "./AdminPlayer.module.scss";
 import Song from "../Song/Song";
 
 export default function AdminPlayer() {
   const dispatch = useAppDispatch();
-  const { songs, loading, error } = useAppSelector((state) => state.songs);
+  const { filteredSongs, loading, searchLoading, error, searchQuery } =
+    useAppSelector((state) => state.songs);
 
   useEffect(() => {
     dispatch(fetchSongs());
   }, [dispatch]);
 
-  if (loading && songs.length === 0) {
+  if (loading && filteredSongs.length === 0 && !searchLoading) {
     return <div className={styles.loading}>Loading songs...</div>;
   }
 
-  if (error && songs.length === 0) {
+  if (error && filteredSongs.length === 0) {
     return <div className={styles.error}>{error}</div>;
   }
+  console.log("searchQuery", searchQuery);
 
   return (
     <div className={styles.adminSection}>
+      <SearchSongs />
       <div className={styles.header}>
-        <h2>Recommended song list</h2>
+        <h2>
+          {searchQuery
+            ? `Song that match: ${searchQuery}`
+            : "Recommended song list"}
+        </h2>
       </div>
 
       <div className={styles.songList}>
-        {songs.map((song) => (
-          <Song song={song} />
+        {searchLoading && <div className={styles.searching}>Searching...</div>}
+
+        {!searchLoading && filteredSongs.length === 0 && (
+          <div className={styles.noResults}>No songs found</div>
+        )}
+
+        {filteredSongs.map((song) => (
+          <Song key={song.id} song={song} />
         ))}
       </div>
     </div>

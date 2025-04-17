@@ -1,0 +1,91 @@
+@use "../../style/variables";
+
+.searchForm {
+  width: 100%;
+  max-width: 30rem;
+  padding-bottom: 4rem;
+}
+
+.searchContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 1.2rem 4rem 1.2rem 1.6rem;
+  font-size: 1.6rem;
+  color: variables.$input-text;
+  background-color: #f5f5f5;
+  border: 1px solid variables.$input-border;
+  border-radius: 1.2rem;
+  transition: all 0.2s ease-in-out;
+
+  &:focus {
+    outline: none;
+    border-color: variables.$yellow;
+    box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.1);
+    background-color: white;
+  }
+
+  &::placeholder {
+    color: variables.$input-text;
+    opacity: 0.7;
+  }
+}
+
+.searchButton {
+  position: absolute;
+  right: 1.2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: black;
+  font-size: 1.6rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+
+  &:hover {
+    color: variables.$brown;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Loading state
+.searchLoading {
+  .searchButton {
+    opacity: 0.7;
+    animation: pulse 1.5s infinite;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 0.7;
+  }
+}
+
+@media (max-width: variables.$breakpoint-sm) {
+  .searchInput {
+    font-size: 1.5rem;
+  }
+
+  .searchButton {
+    font-size: 1.5rem;
+  }
+}

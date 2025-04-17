@@ -4,16 +4,22 @@ import * as songsService from "../services/songs.service";
 
 interface SongsState {
   songs: ISong[];
+  filteredSongs: ISong[];
   currentSong: ISong | null;
   loading: boolean;
+  searchLoading: boolean;
   error: string | null;
+  searchQuery: string;
 }
 
 const initialState: SongsState = {
   songs: [],
+  filteredSongs: [],
   currentSong: null,
   loading: false,
+  searchLoading: false,
   error: null,
+  searchQuery: "",
 };
 
 export const fetchSongs = createAsyncThunk(
@@ -31,13 +37,34 @@ export const fetchSongs = createAsyncThunk(
   }
 );
 
+export const searchSongs = createAsyncThunk(
+  "songs/searchSongs",
+  async (query: string, { rejectWithValue, getState }) => {
+    try {
+      if (!query.trim()) {
+        const state = getState() as { songs: SongsState };
+        return state.songs.songs;
+      }
+
+      const songs = await songsService.searchSongs(query);
+      return songs;
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Failed to search songs"
+      );
+    }
+  }
+);
+
 export const selectSong = createAsyncThunk(
   "songs/selectSong",
   async (songId: string, { rejectWithValue, getState }) => {
     try {
       const state = getState() as { songs: SongsState };
       // First try to find the song in the current state
-      let song = state.songs.songs.find((song) => song.id === songId);
+      let song =
+        state.songs.songs.find((song) => song.id === songId) ||
+        state.songs.filteredSongs.find((song) => song.id === songId);
 
       // If not found, fetch it directly
       if (!song) {
@@ -45,7 +72,7 @@ export const selectSong = createAsyncThunk(
       }
 
       if (!song) {
-        throw new Error("Song not found");
+        throw new Error("ISong not found");
       }
 
       return song;
@@ -67,6 +94,9 @@ const songsSlice = createSlice({
     clearCurrentSong(state) {
       state.currentSong = null;
     },
+    setSearchQuery(state, action: PayloadAction<string>) {
+      state.searchQuery = action.payload;
+    },
   },
   extraReducers: (builder) => {
     // Fetch songs cases
@@ -78,12 +108,31 @@ const songsSlice = createSlice({
       fetchSongs.fulfilled,
       (state, action: PayloadAction<ISong[]>) => {
         state.songs = action.payload;
+        state.filteredSongs = action.payload;
         state.loading = false;
         state.error = null;
       }
     );
     builder.addCase(fetchSongs.rejected, (state, action) => {
       state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    // Search songs cases
+    builder.addCase(searchSongs.pending, (state) => {
+      state.searchLoading = true;
+      state.error = null;
+    });
+    builder.addCase(
+      searchSongs.fulfilled,
+      (state, action: PayloadAction<ISong[]>) => {
+        state.filteredSongs = action.payload;
+        state.searchLoading = false;
+        state.error = null;
+      }
+    );
+    builder.addCase(searchSongs.rejected, (state, action) => {
+      state.searchLoading = false;
       state.error = action.payload as string;
     });
 
@@ -107,5 +156,6 @@ const songsSlice = createSlice({
   },
 });
 
-export const { setCurrentSong, clearCurrentSong } = songsSlice.actions;
+export const { setCurrentSong, clearCurrentSong, setSearchQuery } =
+  songsSlice.actions;
 export default songsSlice.reducer;

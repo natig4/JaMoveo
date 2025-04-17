@@ -20,7 +20,25 @@
 .songList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 1.2rem;
+}
+
+.loading,
+.error,
+.searching,
+.noResults {
+  padding: 2rem;
+  text-align: center;
+  font-size: 1.6rem;
+}
+
+.searching {
+  color: variables.$grey;
+}
+
+.noResults {
+  color: variables.$grey;
+  font-style: italic;
 }
 
 .error {
