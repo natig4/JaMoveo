@@ -1,173 +1,230 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import styles from "./AuthForm.module.scss";
+import { useInput } from "../../hooks/useInput";
+import Input from "../Input/Input";
 import Logo from "../Logo/Logo";
 
 interface AuthFormProps {
   formType: "signin" | "signup" | "signup-admin";
-  onSubmit: (
-    username: string,
-    password: string,
-    email?: string,
-    instrument?: string
-  ) => void;
-  isLoading: boolean;
-  error: string | null;
-  googleAuthUrl: string;
+  onSubmit: (formData: {
+    username: string;
+    password: string;
+    email?: string;
+    instrument?: string;
+    rememberMe?: boolean;
+  }) => void;
+  isLoading?: boolean;
+  error?: string | null;
 }
 
 function AuthForm({
   formType,
   onSubmit,
-  isLoading,
-  error,
-  googleAuthUrl,
+  isLoading = false,
+  error = null,
 }: AuthFormProps) {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [email, setEmail] = useState("");
-  const [instrument, setInstrument] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  // Input states with validation
+  const {
+    value: username,
+    handleInputChange: handleUsernameChange,
+    handleInputBlur: handleUsernameBlur,
+    hasError: usernameHasError,
+  } = useInput("", (value) => value.trim().length >= 3);
 
-  const isLogin = formType === "signin";
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isLogin) {
-      onSubmit(username, password);
-    } else {
-      onSubmit(username, password, email, instrument);
-    }
+  const {
+    value: email,
+    handleInputChange: handleEmailChange,
+    handleInputBlur: handleEmailBlur,
+    hasError: emailHasError,
+  } = useInput("", (value) => {
+    if (!value && formType === "signin") return true; // Email is optional for signin
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  });
+
+  const {
+    value: instrument,
+    handleInputChange: handleInstrumentChange,
+    handleInputBlur: handleInstrumentBlur,
+    hasError: instrumentHasError,
+  } = useInput("", (value) => {
+    if (formType === "signin") return true; // No instrument for signin
+    return value.trim() !== "";
+  });
+
+  const {
+    value: password,
+    handleInputChange: handlePasswordChange,
+    handleInputBlur: handlePasswordBlur,
+    hasError: passwordHasError,
+  } = useInput("", (value) => value.trim().length >= 6);
+
+  // UI states
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
   };
 
-  const toggleShowPassword = () => {
-    setShowPassword(!showPassword);
+  const handleRememberMeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRememberMe(e.target.checked);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (usernameHasError || passwordHasError) {
+      return;
+    }
+
+    if (formType !== "signin" && (emailHasError || instrumentHasError)) {
+      return;
+    }
+
+    onSubmit({
+      username,
+      password,
+      ...(formType !== "signin" && { email, instrument }),
+      rememberMe,
+    });
+  };
+
+  const instrumentOptions = [
+    { value: "", label: "Select your instrument", disabled: true },
+    { value: "guitar", label: "Guitar" },
+    { value: "piano", label: "Piano" },
+    { value: "drums", label: "Drums" },
+    { value: "bass", label: "Bass" },
+    { value: "saxophone", label: "Saxophone" },
+    { value: "vocals", label: "Vocals" },
+    { value: "other", label: "Other" },
+  ];
+
+  const isLogin = formType === "signin";
+  const isAdminSignup = formType === "signup-admin";
+
+  const getHeaderTitle = () => {
+    if (isLogin) return "Log in";
+    if (isAdminSignup) return "Admin Register";
+    return "Register";
   };
 
   return (
-    <form className={styles.container}>
-      <div className='auth-content'>
-        <div className='auth-header'>
+    <div className={styles.container}>
+      <div className={styles.content}>
+        <div className={styles.header}>
           <h2>Welcome to JaMoveo</h2>
-          <h1>
-            {isLogin
-              ? "Log In"
-              : formType === "signup-admin"
-              ? "Admin Register"
-              : "Register"}
-          </h1>
+          <h1>{getHeaderTitle()}</h1>
         </div>
 
-        {error && <div className='error'>{error}</div>}
+        {error && <div className={styles.errorMessage}>{error}</div>}
 
-        <form onSubmit={handleSubmit} className='auth-form'>
-          <div className='form-group'>
-            <label htmlFor='username'>Username*</label>
-            <input
-              type='text'
-              id='username'
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder={!isLogin ? "Select your username" : "Username"}
-              required
+        <form onSubmit={handleSubmit} className={styles.form}>
+          <Input
+            id='username'
+            label={isLogin ? "Enter your Username" : "Your name"}
+            type='text'
+            value={username}
+            onChange={handleUsernameChange}
+            onBlur={handleUsernameBlur}
+            placeholder='Username'
+            required
+            hasError={usernameHasError}
+            errorText='Username is required (min. 3 characters)'
+          />
+
+          {!isLogin && (
+            <Input
+              id='email'
+              label='Your email address'
+              type='email'
+              value={email}
+              onChange={handleEmailChange}
+              onBlur={handleEmailBlur}
+              placeholder='your.email@example.com'
+              hasError={emailHasError}
+              errorText='Please enter a valid email address'
             />
-          </div>
-
-          {!isLogin && (
-            <div className='form-group'>
-              <label htmlFor='email'>Email</label>
-              <input
-                type='email'
-                id='email'
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder='Your email address'
-              />
-            </div>
           )}
 
           {!isLogin && (
-            <div className='form-group'>
-              <label htmlFor='instrument'>Your instrument*</label>
-              <div className='select-wrapper'>
-                <select
-                  id='instrument'
-                  value={instrument}
-                  onChange={(e) => setInstrument(e.target.value)}
-                  required
-                >
-                  <option value='' disabled>
-                    Select your instrument
-                  </option>
-                  <option value='guitar'>Guitar</option>
-                  <option value='piano'>Piano</option>
-                  <option value='drums'>Drums</option>
-                  <option value='bass'>Bass</option>
-                  <option value='saxophone'>Saxophone</option>
-                  <option value='vocals'>Vocals</option>
-                  <option value='other'>Other</option>
-                </select>
+            <Input
+              id='instrument'
+              label='Your instrument'
+              value={instrument}
+              onChange={handleInstrumentChange}
+              onBlur={handleInstrumentBlur}
+              options={instrumentOptions}
+              required
+              hasError={instrumentHasError}
+              errorText='Please select an instrument'
+            />
+          )}
+
+          <Input
+            id='password'
+            label={isLogin ? "Enter your Password" : "Create password"}
+            type='password'
+            value={password}
+            onChange={handlePasswordChange}
+            onBlur={handlePasswordBlur}
+            placeholder='Your Password'
+            required
+            hasError={passwordHasError}
+            errorText='Password must be at least 6 characters'
+            showPassword={showPassword}
+            onTogglePassword={togglePasswordVisibility}
+          />
+
+          {isLogin && (
+            <div className={styles.formActions}>
+              <div className={styles.rememberMe}>
+                <input
+                  type='checkbox'
+                  id='rememberMe'
+                  checked={rememberMe}
+                  onChange={handleRememberMeChange}
+                />
+                <label htmlFor='rememberMe'>Remember me</label>
               </div>
+              <Link to='/forgot-password' className={styles.forgotPassword}>
+                Forgot Password ?
+              </Link>
             </div>
           )}
 
-          <div className='form-group'>
-            <label htmlFor='password'>
-              {!isLogin ? "Create password*" : "Password*"}
-            </label>
-            <div className='password-input'>
-              <input
-                type={showPassword ? "text" : "password"}
-                id='password'
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder='Your Password'
-                required
-              />
-              <button
-                type='button'
-                className='toggle-password'
-                onClick={toggleShowPassword}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? (
-                  <span className='eye-icon'>👁️</span>
-                ) : (
-                  <span className='eye-icon'>👁️‍🗨️</span>
-                )}
-              </button>
-            </div>
-          </div>
-
-          <button type='submit' className='auth-button' disabled={isLoading}>
-            {isLoading ? "Loading..." : !isLogin ? "Register" : "Sign In"}
+          <button
+            type='submit'
+            className={styles.submitButton}
+            disabled={
+              isLoading ||
+              usernameHasError ||
+              passwordHasError ||
+              (!isLogin && (emailHasError || instrumentHasError))
+            }
+          >
+            {isLoading ? "Loading..." : isLogin ? "Log in" : "Register"}
           </button>
-
-          <div className='auth-separator'>
-            <span>OR</span>
-          </div>
-
-          <a href={googleAuthUrl} className='google-auth-button'>
-            <span className='google-icon'>G</span>
-            {!isLogin ? "Sign up with Google" : "Sign in with Google"}
-          </a>
         </form>
 
-        <div className='auth-alt-action'>
-          {!isLogin ? (
-            <>
-              Already have an account? <Link to='/signin'>Log In</Link>
-            </>
-          ) : (
+        <div className={styles.authRedirect}>
+          {isLogin ? (
             <>
               Don't have an account? <Link to='/signup'>Register</Link>
             </>
+          ) : (
+            <>
+              Already have an account? <Link to='/signin'>Log In</Link>
+            </>
           )}
         </div>
       </div>
+
       <div className={`${styles.image} ${isLogin ? styles.login : ""}`}>
         <Logo className={`${styles.logo} bebas-neue-regular`} />
       </div>
-    </form>
+    </div>
   );
 }
 
