@@ -23,7 +23,7 @@ function PlayerPage() {
 
   return (
     <div
-      className={`${styles.container} ${!currentSong ? styles.loading : ""} ${
+      className={`${styles.container} ${currentSong ? styles.playing : ""} ${
         user?.role === UserRole.ADMIN ? styles.admin : ""
       }`}
     >
