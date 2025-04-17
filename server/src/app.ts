@@ -35,10 +35,24 @@ app.use(
   })
 );
 
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  if (req.session && !req.session.regenerate) {
+    req.session.regenerate = (cb: (err?: any) => void) => {
+      cb();
+    };
+  }
+  if (req.session && !req.session.save) {
+    req.session.save = (cb: (err?: any) => void) => {
+      cb();
+    };
+  }
+  next();
+});
+
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Request logging middleware for development
+// TODO: remember to remove it.
 if (config.nodeEnv === "development") {
   app.use((req: Request, _res: Response, next: NextFunction) => {
     console.log(`${new Date().toISOString()} | ${req.method} ${req.url}`);

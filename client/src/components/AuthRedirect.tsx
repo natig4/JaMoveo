@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../hooks/redux-hooks";
 
@@ -11,16 +12,17 @@ function AuthRedirect({ children }: AuthRedirectProps) {
   );
   const navigate = useNavigate();
 
-  if (isAuthenticated) {
-    navigate("/");
-    return null;
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
 
   if (loading && !initialized) {
     return <div className='auth-loading'>Loading...</div>;
   }
 
-  return <>{children}</>;
+  return !isAuthenticated ? <>{children}</> : null;
 }
 
 export default AuthRedirect;
