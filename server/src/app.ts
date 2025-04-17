@@ -34,21 +34,41 @@ app.use(
   cookieSession({
     name: "session",
     keys: [config.sessionSecret, config.sessionSecret2],
-    // The max age cookie is set via the controllers
+    maxAge: 24 * 60 * 60 * 1000, // Default 24 hours
     secure: config.nodeEnv === "production",
     httpOnly: true,
     sameSite: config.nodeEnv === "production" ? "none" : "lax",
   })
 );
 
+app.use((req, _res, next) => {
+  if (req.session && !req.session.cookie) {
+    req.session.cookie = {};
+  }
+
+  if (req.session && !req.session.regenerate) {
+    req.session.regenerate = (cb: (err?: Error) => void) => {
+      cb();
+    };
+  }
+
+  if (req.session && !req.session.save) {
+    req.session.save = (cb: (err?: Error) => void) => {
+      cb();
+    };
+  }
+
+  next();
+});
+
 app.use((req: Request, _res: Response, next: NextFunction) => {
   if (req.session && !req.session.regenerate) {
-    req.session.regenerate = (cb: (err?: any) => void) => {
+    req.session.regenerate = (cb: (err?: Error) => void) => {
       cb();
     };
   }
   if (req.session && !req.session.save) {
-    req.session.save = (cb: (err?: any) => void) => {
+    req.session.save = (cb: (err?: Error) => void) => {
       cb();
     };
   }

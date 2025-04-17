@@ -3,14 +3,14 @@ import passport from "passport";
 import * as UsersService from "../services/users.service";
 import { User, UserRole } from "../models/types";
 
-// Default session options
+// Default session options - 24 hours
 const DEFAULT_SESSION_OPTIONS = {
-  maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  maxAge: 24 * 60 * 60 * 1000,
 };
 
-// Extended session options for "remember me"
+// Extended session options for "remember me" - 30 days
 const EXTENDED_SESSION_OPTIONS = {
-  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  maxAge: 30 * 24 * 60 * 60 * 1000,
 };
 
 async function registerUser(userData: Omit<User, "id">, role: UserRole) {
@@ -48,7 +48,7 @@ function handleRegister(role: UserRole) {
           return;
         }
 
-        if (req.session) {
+        if (req.session && req.session.cookie) {
           req.session.cookie.maxAge = DEFAULT_SESSION_OPTIONS.maxAge;
         }
 
@@ -117,12 +117,14 @@ export function login(req: Request, res: Response, next: NextFunction): void {
 
         const rememberMe = req.body.rememberMe === true;
 
-        if (req.session) {
-          if (rememberMe) {
-            req.session.cookie.maxAge = EXTENDED_SESSION_OPTIONS.maxAge;
-          } else {
-            req.session.cookie.maxAge = null;
-          }
+        if (req.session && req.session.cookie) {
+          req.session.cookie.maxAge = rememberMe
+            ? EXTENDED_SESSION_OPTIONS.maxAge
+            : DEFAULT_SESSION_OPTIONS.maxAge;
+        } else {
+          console.warn(
+            "Session or session.cookie is undefined, couldn't set maxAge"
+          );
         }
 
         return res.status(200).json({
@@ -145,24 +147,23 @@ export function logout(req: Request, res: Response): void {
     }
 
     if (req.session) {
-      req.session.destroy((sessionErr: Error) => {
-        if (sessionErr) {
-          console.error("Error destroying session:", sessionErr);
+      for (const key in req.session) {
+        if (key !== "cookie") {
+          delete req.session[key];
         }
+      }
 
-        res.clearCookie("connect.sid");
-
-        res.status(200).json({
-          success: true,
-          message: "Successfully logged out",
-        });
-      });
-    } else {
-      res.status(200).json({
-        success: true,
-        message: "Successfully logged out",
-      });
+      if (req.session.cookie) {
+        req.session.cookie.maxAge = 0;
+      }
     }
+
+    res.clearCookie("session");
+
+    res.status(200).json({
+      success: true,
+      message: "Successfully logged out",
+    });
   });
 }
 
@@ -182,7 +183,7 @@ export function getCurrentUser(req: Request, res: Response): void {
 }
 
 export function googleAuthCallback(req: Request, res: Response): void {
-  if (req.session && req.user) {
+  if (req.session && req.user && req.session.cookie) {
     req.session.cookie.maxAge = DEFAULT_SESSION_OPTIONS.maxAge;
   }
 
