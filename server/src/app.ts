@@ -10,7 +10,15 @@ import { songsRouter } from "./routes/songs.router";
 
 const app = express();
 
-app.use(helmet());
+if (config.nodeEnv === "production") {
+  app.use(helmet());
+} else {
+  app.use(
+    helmet({
+      contentSecurityPolicy: false,
+    })
+  );
+}
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -61,11 +69,49 @@ if (config.nodeEnv === "development") {
 app.use("/auth", authRouter);
 app.use("/song", songsRouter);
 
-if (config.nodeEnv === "production") {
-  app.use(express.static(join(__dirname, "../../client/dist")));
+if (config.nodeEnv === "development") {
+  // In development, we need to proxy to the Vite dev server
+  app.get("*", (req: Request, res: Response, next: NextFunction) => {
+    // Skip API routes
+    if (req.url.startsWith("/auth") || req.url.startsWith("/song")) {
+      return next();
+    }
+
+    // Try to serve from client/dist if it exists
+    const clientDistPath = join(__dirname, "../../client/dist");
+    const indexPath = join(clientDistPath, "index.html");
+
+    try {
+      if (require("fs").existsSync(indexPath)) {
+        if (req.url === "/" || !req.url.includes(".")) {
+          return res.sendFile(indexPath);
+        } else {
+          const filePath = join(clientDistPath, req.url);
+          return res.sendFile(filePath, (err) => {
+            if (err) {
+              // If file not found, serve index.html for SPA routing
+              return res.sendFile(indexPath);
+            }
+          });
+        }
+      } else {
+        // No dist folder, redirect to client dev server
+        console.log(
+          `Redirecting ${req.url} to client dev server at ${config.clientUrl}`
+        );
+        return res.redirect(`${config.clientUrl}${req.url}`);
+      }
+    } catch (err) {
+      console.error("Error serving client files:", err);
+      return res.redirect(`${config.clientUrl}${req.url}`);
+    }
+  });
+} else {
+  const clientDistPath = join(__dirname, "../../client/dist");
+  app.use(express.static(clientDistPath));
 
   app.get("*", (_req: Request, res: Response) => {
-    res.sendFile(join(__dirname, "../../client/dist/index.html"));
+    res.sendFile(join(clientDistPath, "index.html"));
   });
 }
 
@@ -107,6 +153,15 @@ app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     success: false,
     error: "Internal Server Error",
     message: config.nodeEnv === "development" ? error.message : undefined,
+  });
+});
+
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error("Error:", err);
+  res.status(500).json({
+    success: false,
+    error: "Internal Server Error",
+    message: config.nodeEnv === "development" ? err.message : undefined,
   });
 });
 

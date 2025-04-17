@@ -6,7 +6,9 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "nodemon --exec ts-node src/index.ts"
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "check-client": "node scripts/check-client-build.js",
+    "predev": "node scripts/check-client-build.js"
   },
   "keywords": [],
   "author": "",
