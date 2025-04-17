@@ -1,0 +1,32 @@
+@use "../../style/variables";
+
+.container {
+  flex: 1;
+  margin: 4rem;
+  padding: 2rem;
+  border-radius: 0.8rem;
+  border: 1px solid black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.loading {
+    border: none;
+    background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='8' ry='8' stroke='%23333' stroke-width='5' stroke-dasharray='2%2c 15' stroke-dashoffset='16' stroke-linecap='square'/%3e%3c/svg%3e");
+  }
+
+  .noSongContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    .waitingMessage {
+      font-size: 3.8rem;
+      font-weight: 500;
+    }
+  }
+
+  @media (max-width: variables.$breakpoint-sm) {
+    margin: 2rem;
+  }
+}

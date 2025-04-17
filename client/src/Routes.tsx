@@ -3,7 +3,7 @@ import AuthRedirect from "./components/AuthRedirect";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SiteHeader from "./components/SiteHeader/SiteHeader";
 import Signup from "./pages/Signup";
-import Player from "./pages/Player";
+import Player from "./pages/Player/Player";
 import Signin from "./pages/Signin";
 import SignupAdmin from "./pages/SignupAdmin";
 import User from "./pages/User/User";
