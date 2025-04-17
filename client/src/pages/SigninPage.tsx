@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../hooks/redux-hooks";
 import { loginUser, clearError } from "../store/auth-slice";
-import AuthForm from "../components/AuthForm";
+import AuthForm from "../components/AuthForm/AuthForm";
 import { getGoogleAuthUrl } from "../services/auth.service";
 
 function SigninPage() {

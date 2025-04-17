@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import styles from "./AuthForm.module.scss";
+import Logo from "../Logo/Logo";
 
 interface AuthFormProps {
   formType: "signin" | "signup" | "signup-admin";
@@ -42,7 +44,7 @@ function AuthForm({
   };
 
   return (
-    <div className='auth-container'>
+    <form className={styles.container}>
       <div className='auth-content'>
         <div className='auth-header'>
           <h2>Welcome to JaMoveo</h2>
@@ -162,8 +164,10 @@ function AuthForm({
           )}
         </div>
       </div>
-      <div className='auth-image'></div>
-    </div>
+      <div className={`${styles.image} ${isLogin ? styles.login : ""}`}>
+        <Logo className={`${styles.logo} bebas-neue-regular`} />
+      </div>
+    </form>
   );
 }
 

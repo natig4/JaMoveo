@@ -15,6 +15,11 @@ body {
   flex-direction: column;
   min-height: 100vh;
 }
+#root {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
 
 * {
   margin: 0;
@@ -93,4 +98,10 @@ h3 {
 
 .font-extrabold {
   font-weight: 800;
+}
+
+.bebas-neue-regular {
+  font-family: "Bebas Neue", sans-serif;
+  font-weight: 400;
+  font-style: normal;
 }

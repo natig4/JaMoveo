@@ -1,0 +1,24 @@
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 1;
+
+  .image {
+    position: relative;
+    background-image: url("/src/assets/register.png");
+    background-size: cover;
+    background-position: center;
+    border-top-left-radius: 12px;
+    border-bottom-left-radius: 12px;
+    &.login {
+      background-image: url("/src/assets/login.png");
+    }
+    .logo {
+      position: absolute;
+      font-size: 5rem;
+      color: white;
+      bottom: 0;
+      right: 2.4rem;
+    }
+  }
+}

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../hooks/redux-hooks";
 import { registerUser, clearError } from "../store/auth-slice";
-import AuthForm from "./AuthForm";
+import AuthForm from "./AuthForm/AuthForm";
 import { getGoogleAuthUrl } from "../services/auth.service";
 
 function SignupPage({ isAdmin }: { isAdmin: boolean }) {
