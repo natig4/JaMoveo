@@ -3,6 +3,7 @@ import { join } from "path";
 import cors from "cors";
 import helmet from "helmet";
 import cookieSession from "cookie-session";
+import cookieParser from "cookie-parser";
 import passport from "./config/passport";
 import config from "./config/index";
 import { authRouter } from "./routes/auth.router";
@@ -31,6 +32,8 @@ app.use(
     credentials: true,
   })
 );
+
+app.use(cookieParser());
 
 app.use(
   cookieSession({

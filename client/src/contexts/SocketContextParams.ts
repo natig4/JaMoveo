@@ -6,6 +6,7 @@ interface SocketContextValue {
   selectSong: (songId: string) => void;
   quitSong: () => void;
   currentSong: ISong | null;
+  isLoading?: boolean;
 }
 
 export const SocketContext = createContext<SocketContextValue>({
@@ -13,6 +14,7 @@ export const SocketContext = createContext<SocketContextValue>({
   selectSong: () => {},
   quitSong: () => {},
   currentSong: null,
+  isLoading: false,
 });
 
 export const useSocket = () => useContext(SocketContext);

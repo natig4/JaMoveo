@@ -60,6 +60,7 @@
 }
 
 .playButton {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -72,8 +73,18 @@
   cursor: pointer;
   transition: background-color 0.2s;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background-color: variables.$yellow;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &.disabled {
+    opacity: 0.6;
+    background-color: rgba(0, 0, 0, 0.05);
   }
 }
 
@@ -82,4 +93,16 @@
   padding: 2rem;
   text-align: center;
   font-size: 1.6rem;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 1;
+  }
 }

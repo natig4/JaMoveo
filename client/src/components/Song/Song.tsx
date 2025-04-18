@@ -18,7 +18,7 @@ export default function Song({ song }: { song: ISong }) {
 
     if (!connected) {
       console.warn(
-        "Socket not connected. Group members will not receive this selection."
+        "Socket not connected. Song selection will be queued and sent when connection is restored."
       );
     }
   };

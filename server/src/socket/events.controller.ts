@@ -3,24 +3,63 @@ import { getUserById } from "../services/users.service";
 import { getSongById } from "../services/songs.service";
 import { getGroupById } from "../services/groups.service";
 import { IUser } from "../models/types";
-
-interface AuthenticateData {
-  userId: string;
-}
-
-interface SelectSongData {
-  userId: string;
-  songId: string;
-}
+import {
+  ServerToClientEvents,
+  ClientToServerEvents,
+  InterServerEvents,
+  SocketData,
+  AuthenticateData,
+  SelectSongData,
+  QuitSongData,
+} from "./types";
 
 const userSockets = new Map<string, string[]>();
-
 const userGroups = new Map<string, string>();
-
 const groupRooms = new Map<string, Set<string>>();
 
-export function handleConnection(io: Server, socket: Socket): void {
+export function handleConnection(
+  io: Server<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
+  >,
+  socket: Socket<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
+  >
+): void {
   console.log("New socket connection:", socket.id);
+
+  if (socket.data.userId) {
+    const userId = socket.data.userId;
+    const user = socket.data.user || getUserById(userId);
+
+    if (user) {
+      if (!userSockets.has(userId)) {
+        userSockets.set(userId, []);
+      }
+      userSockets.get(userId)?.push(socket.id);
+
+      console.log(
+        `User ${userId} (${user.username}) connected with socket ${socket.id}`
+      );
+
+      if (user.groupId) {
+        const group = getGroupById(user.groupId);
+        if (group) {
+          joinGroupRoom(socket, user, group.id);
+        }
+      }
+
+      socket.emit("auth_success", {
+        connected: true,
+        message: "Authentication successful",
+      });
+    }
+  }
 
   socket.on("authenticate", async (data: AuthenticateData) => {
     try {
@@ -39,28 +78,34 @@ export function handleConnection(io: Server, socket: Socket): void {
     }
   });
 
-  socket.on("quit_song", ({ userId }) => {
-    const user = getUserById(userId);
-
-    if (!user || !user.groupId) return;
-
-    const group = getGroupById(user.groupId);
-    if (!group || group.adminId !== user.id) return;
-
-    const roomId = `group:${user.groupId}`;
-    console.log(`Admin ${userId} quit current song for group ${user.groupId}`);
-
-    io.to(roomId).emit("song_quit");
+  socket.on("quit_song", (data: QuitSongData) => {
+    try {
+      handleQuitSong(io, data);
+    } catch (error) {
+      console.error("Error handling quit_song event:", error);
+    }
   });
 
   socket.on("disconnect", () => {
     handleDisconnect(socket);
   });
+
+  socket.emit("connection_status", true);
 }
 
 function handleAuthenticate(
-  io: Server,
-  socket: Socket,
+  io: Server<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
+  >,
+  socket: Socket<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
+  >,
   { userId }: AuthenticateData
 ): void {
   if (!userId) {
@@ -93,7 +138,8 @@ function handleAuthenticate(
     }
   }
 
-  (socket as any).userId = userId;
+  socket.data.userId = userId;
+  socket.data.user = user;
 
   socket.emit("auth_success", {
     connected: true,
@@ -102,7 +148,12 @@ function handleAuthenticate(
 }
 
 async function handleSelectSong(
-  io: Server,
+  io: Server<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
+  >,
   { userId, songId }: SelectSongData
 ): Promise<void> {
   const user = getUserById(userId);
@@ -134,8 +185,37 @@ async function handleSelectSong(
   io.to(roomId).emit("song_selected", { songId });
 }
 
-function handleDisconnect(socket: Socket): void {
-  const userId = (socket as any).userId;
+function handleQuitSong(
+  io: Server<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
+  >,
+  { userId }: QuitSongData
+): void {
+  const user = getUserById(userId);
+
+  if (!user || !user.groupId) return;
+
+  const group = getGroupById(user.groupId);
+  if (!group || group.adminId !== user.id) return;
+
+  const roomId = `group:${user.groupId}`;
+  console.log(`Admin ${userId} quit current song for group ${user.groupId}`);
+
+  io.to(roomId).emit("song_quit");
+}
+
+function handleDisconnect(
+  socket: Socket<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
+  >
+): void {
+  const userId = socket.data.userId;
   console.log(
     `Socket ${socket.id} disconnected${userId ? ` (user: ${userId})` : ""}`
   );
@@ -162,7 +242,16 @@ function handleDisconnect(socket: Socket): void {
   }
 }
 
-function joinGroupRoom(socket: Socket, user: IUser, groupId: string): void {
+function joinGroupRoom(
+  socket: Socket<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
+  >,
+  user: IUser,
+  groupId: string
+): void {
   const roomId = `group:${groupId}`;
   socket.join(roomId);
 

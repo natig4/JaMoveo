@@ -1,4 +1,3 @@
-// client/src/pages/Player/Player.tsx
 import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
 import { FaMusic } from "react-icons/fa";
 import { PiMusicNoteSimpleFill } from "react-icons/pi";
@@ -14,11 +13,23 @@ import { useSocket } from "../../contexts/SocketContextParams";
 function PlayerPage() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { currentSong, quitSong } = useSocket();
+  const { currentSong, quitSong, connected, isLoading } = useSocket();
 
   const handleQuit = () => {
     dispatch(stopScrolling());
     quitSong();
+  };
+
+  const renderConnectionStatus = () => {
+    if (!connected) {
+      return (
+        <div className={styles.connectionStatus}>
+          <span className={styles.disconnectedIndicator}></span>
+          Disconnected - reconnecting...
+        </div>
+      );
+    }
+    return null;
   };
 
   const noSongMessage = (
@@ -28,6 +39,7 @@ function PlayerPage() {
         <FaMusic color='#FFCD29' size={50} />
       </div>
       <p className={styles.waitingMessage}>Waiting for next song...</p>
+      {renderConnectionStatus()}
     </div>
   );
 
@@ -39,14 +51,23 @@ function PlayerPage() {
         isAdmin ? styles.admin : ""
       }`}
     >
+      {isLoading && (
+        <div className={styles.loadingOverlay}>
+          <div className={styles.spinner}></div>
+          <p>Loading song...</p>
+        </div>
+      )}
+
       {!currentSong && !isAdmin && noSongMessage}
 
       {currentSong && (
         <MusicPlayer song={currentSong} instrument={user?.instrument} />
       )}
+
       {!currentSong && isAdmin && (
         <>
           <AdminPlayer />
+          {renderConnectionStatus()}
         </>
       )}
 
