@@ -14,9 +14,9 @@ function AuthRedirect({ children }: AuthRedirectProps) {
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(!user?.groupId ? "/user" : "/");
+      navigate(!user?.groupId || !user?.instrument ? "/user" : "/");
     }
-  }, [isAuthenticated, navigate, user?.groupId]);
+  }, [isAuthenticated, navigate, user?.groupId, user?.instrument]);
 
   if (loading && !initialized) {
     return <div className='auth-loading'>Loading...</div>;

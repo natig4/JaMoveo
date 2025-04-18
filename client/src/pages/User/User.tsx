@@ -7,12 +7,24 @@ import StyledButton from "../../components/StyledButton/StyledButton";
 import UserProfileForm from "../../components/UserProfileForm/UserProfileForm";
 import { UserRole } from "../../model/types";
 import { useSocket } from "../../contexts/SocketContextParams";
+import { useEffect, useState } from "react";
+import MissingInstrumentPrompt from "../../components/MissingInstrumentPrompt/MissingInstrumentPrompt";
 
 function User() {
   const { quitSong } = useSocket();
   const { user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+
+  const [showInstrumentPrompt, setShowInstrumentPrompt] = useState(false);
+
+  useEffect(() => {
+    if (user && !user.instrument) {
+      setShowInstrumentPrompt(true);
+    } else {
+      setShowInstrumentPrompt(false);
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     quitSong();
@@ -22,32 +34,36 @@ function User() {
   };
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h1>Welcome {user?.username}!</h1>
-        <p>
-          Current instrument: <strong>{user?.instrument || "None"}</strong>
-        </p>
-        {user?.groupName ? (
-          <p className={styles.groupInfo}>
-            Current group: <strong>{user.groupName}</strong>
-            {user.role === UserRole.ADMIN && (
-              <span className={styles.adminBadge}>Admin</span>
-            )}
+    <>
+      {showInstrumentPrompt && <MissingInstrumentPrompt />}
+
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <h1>Welcome {user?.username}!</h1>
+          <p>
+            Current instrument: <strong>{user?.instrument || "None"}</strong>
           </p>
-        ) : (
-          <p className={styles.groupInfo}>No group joined</p>
-        )}
-      </div>
+          {user?.groupName ? (
+            <p className={styles.groupInfo}>
+              Current group: <strong>{user.groupName}</strong>
+              {user.role === UserRole.ADMIN && (
+                <span className={styles.adminBadge}>Admin</span>
+              )}
+            </p>
+          ) : (
+            <p className={styles.groupInfo}>No group joined</p>
+          )}
+        </div>
 
-      <UserProfileForm />
+        <UserProfileForm />
 
-      <div className={styles.logoutSection}>
-        <StyledButton onClick={handleLogout} className={styles.logoutButton}>
-          Logout
-        </StyledButton>
+        <div className={styles.logoutSection}>
+          <StyledButton onClick={handleLogout} className={styles.logoutButton}>
+            Logout
+          </StyledButton>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

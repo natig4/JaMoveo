@@ -7,6 +7,7 @@ import Input from "../Input/Input";
 import Logo from "../Logo/Logo";
 import StyledButton from "../StyledButton/StyledButton";
 import InstrumentSelect from "../InstrumentSelect";
+import GoogleSignInButton from "../GoogleSignInButton/GoogleSignInButton";
 
 interface AuthFormProps {
   formType: "signin" | "signup" | "signup-admin";
@@ -129,6 +130,13 @@ function AuthForm({
           <h2>Welcome to JaMoveo</h2>
           <h1>{getHeaderTitle()}</h1>
         </div>
+
+        {isLogin && (
+          <>
+            <GoogleSignInButton />
+            <div className={styles.orDivider}>or</div>
+          </>
+        )}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <Input

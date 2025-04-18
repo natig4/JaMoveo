@@ -179,3 +179,27 @@
     display: none;
   }
 }
+
+.orDivider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+  color: variables.$grey;
+  font-size: 1.4rem;
+  text-align: center;
+
+  &::before,
+  &::after {
+    content: "";
+    flex: 1;
+    border-bottom: 1px solid #eaeaea;
+  }
+
+  &::before {
+    margin-right: 1rem;
+  }
+
+  &::after {
+    margin-left: 1rem;
+  }
+}

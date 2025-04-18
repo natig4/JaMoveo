@@ -1,0 +1,77 @@
+@use "../../style/variables";
+
+.promptContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.promptContent {
+  background-color: white;
+  padding: 3rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 48rem;
+  text-align: center;
+
+  h2 {
+    color: variables.$brown;
+    font-size: 2.8rem;
+    margin-bottom: 1.6rem;
+  }
+
+  p {
+    font-size: 1.8rem;
+    color: variables.$grey;
+    margin-bottom: 2.4rem;
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.instrumentSelect {
+  margin: 0 auto;
+  width: 100%;
+}
+
+.submitButton {
+  margin-top: 1rem;
+}
+
+.errorMessage {
+  color: variables.$error-color;
+  font-size: 1.6rem;
+}
+
+.successMessage {
+  color: #38a169;
+  font-size: 1.6rem;
+  font-weight: 500;
+}
+
+@media (max-width: variables.$breakpoint-sm) {
+  .promptContent {
+    padding: 2rem;
+    width: 80%;
+
+    h2 {
+      font-size: 2.4rem;
+    }
+
+    p {
+      font-size: 1.6rem;
+    }
+  }
+}
