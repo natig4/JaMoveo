@@ -44,7 +44,7 @@ export function getGroupById(id: string): IGroup | undefined {
 
 export function getGroupByName(name: string): IGroup | undefined {
   return groups.find(
-    (group) => group.name.toLowerCase() === name.toLowerCase()
+    (group) => group.name?.toLowerCase() === name?.toLowerCase()
   );
 }
 

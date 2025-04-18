@@ -203,6 +203,7 @@ function UserProfileForm() {
               loading ||
               groupHasError ||
               isChecking ||
+              !groupName ||
               groupName === user.groupName
             }
             className={styles.submitButton}

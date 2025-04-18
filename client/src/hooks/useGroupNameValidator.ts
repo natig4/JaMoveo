@@ -14,8 +14,9 @@ export function useGroupNameValidator(
 
   const valueIsValid = isAdmin
     ? enteredValue.trim().length >= 3 && !isExists && !error
-    : (enteredValue.trim().length >= 3 && !isSignIn) ||
-      enteredValue.length === 0;
+    : isSignIn
+    ? enteredValue.length === 0 || enteredValue.trim().length >= 3
+    : enteredValue.trim().length >= 3;
 
   const handleInputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
