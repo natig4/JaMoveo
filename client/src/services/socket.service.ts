@@ -45,6 +45,16 @@ class SocketService {
     this.socket.emit("select_song", { userId, songId });
   }
 
+  quitSong(userId: string) {
+    if (!this.socket) return;
+    this.socket.emit("quit_song", { userId });
+  }
+
+  onSongQuit(callback: () => void) {
+    if (!this.socket) return;
+    this.socket.on("song_quit", callback);
+  }
+
   disconnect() {
     if (!this.socket) return;
     this.socket.disconnect();

@@ -7,18 +7,18 @@ import styles from "./Player.module.scss";
 import AdminPlayer from "../../components/AdminPlayer/AdminPlayer";
 import MusicPlayer from "../../components/MusicPlayer/MusicPlayer";
 import { UserRole } from "../../model/types";
-import { clearCurrentSong, stopScrolling } from "../../store/songs-slice";
+import { stopScrolling } from "../../store/songs-slice";
 import StyledButton from "../../components/StyledButton/StyledButton";
 import { useSocket } from "../../contexts/SocketContextParams";
 
 function PlayerPage() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { currentSong } = useSocket();
+  const { currentSong, quitSong } = useSocket();
 
   const handleQuit = () => {
     dispatch(stopScrolling());
-    dispatch(clearCurrentSong());
+    quitSong();
   };
 
   const noSongMessage = (

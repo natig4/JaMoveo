@@ -36,6 +36,11 @@ export const SocketProvider: React.FC<SocketContextProps> = ({ children }) => {
       }
     });
 
+    socketService.onSongQuit(() => {
+      console.log("Song quit via socket");
+      setCurrentSong(null);
+    });
+
     return () => {
       clearInterval(intervalId);
       socketService.disconnect();
@@ -47,8 +52,16 @@ export const SocketProvider: React.FC<SocketContextProps> = ({ children }) => {
     socketService.selectSong(user.id, songId);
   };
 
+  const quitSong = () => {
+    if (!user) return;
+    socketService.quitSong(user.id);
+    setCurrentSong(null);
+  };
+
   return (
-    <SocketContext.Provider value={{ connected, selectSong, currentSong }}>
+    <SocketContext.Provider
+      value={{ connected, selectSong, quitSong, currentSong }}
+    >
       {children}
     </SocketContext.Provider>
   );

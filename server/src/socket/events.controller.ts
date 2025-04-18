@@ -39,6 +39,20 @@ export function handleConnection(io: Server, socket: Socket): void {
     }
   });
 
+  socket.on("quit_song", ({ userId }) => {
+    const user = getUserById(userId);
+
+    if (!user || !user.groupId) return;
+
+    const group = getGroupById(user.groupId);
+    if (!group || group.adminId !== user.id) return;
+
+    const roomId = `group:${user.groupId}`;
+    console.log(`Admin ${userId} quit current song for group ${user.groupId}`);
+
+    io.to(roomId).emit("song_quit");
+  });
+
   socket.on("disconnect", () => {
     handleDisconnect(socket);
   });
@@ -128,7 +142,6 @@ function handleDisconnect(socket: Socket): void {
 
   if (!userId) return;
 
-  // Remove socket from user's connections
   const userSocketIds = userSockets.get(userId) || [];
   const updatedSocketIds = userSocketIds.filter((id) => id !== socket.id);
 
@@ -138,10 +151,8 @@ function handleDisconnect(socket: Socket): void {
     userSockets.delete(userId);
   }
 
-  // Get group ID for the user
   const groupId = userGroups.get(userId);
 
-  // Remove socket from group room
   if (groupId && groupRooms.has(groupId)) {
     groupRooms.get(groupId)?.delete(socket.id);
 
@@ -151,15 +162,12 @@ function handleDisconnect(socket: Socket): void {
   }
 }
 
-// Join a group room
 function joinGroupRoom(socket: Socket, user: IUser, groupId: string): void {
   const roomId = `group:${groupId}`;
   socket.join(roomId);
 
-  // Store user to group mapping
   userGroups.set(user.id, groupId);
 
-  // Store socket in group room
   if (!groupRooms.has(groupId)) {
     groupRooms.set(groupId, new Set());
   }
