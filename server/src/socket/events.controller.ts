@@ -16,6 +16,7 @@ import {
 const userSockets = new Map<string, string[]>();
 const userGroups = new Map<string, string>();
 const groupRooms = new Map<string, Set<string>>();
+const activeGroupSongs = new Map<string, string>();
 
 export function handleConnection(
   io: Server<
@@ -47,21 +48,45 @@ export function handleConnection(
         `User ${userId} (${user.username}) connected with socket ${socket.id}`
       );
 
+      let activeSongId: string | undefined = undefined;
+
       if (user.groupId) {
         const group = getGroupById(user.groupId);
         if (group) {
           joinGroupRoom(socket, user, group.id);
+
+          activeSongId = activeGroupSongs.get(group.id);
         }
       }
 
       socket.emit("auth_success", {
         connected: true,
         message: "Authentication successful",
+        activeSongId,
       });
     }
   }
 
-  socket.on("authenticate", async (data: AuthenticateData) => {
+  setupSocketEventListeners(io, socket);
+
+  socket.emit("connection_status", true);
+}
+
+function setupSocketEventListeners(
+  io: Server<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
+  >,
+  socket: Socket<
+    ClientToServerEvents,
+    ServerToClientEvents,
+    InterServerEvents,
+    SocketData
+  >
+): void {
+  socket.on("authenticate", (data: AuthenticateData) => {
     try {
       handleAuthenticate(io, socket, data);
     } catch (error) {
@@ -70,7 +95,7 @@ export function handleConnection(
     }
   });
 
-  socket.on("select_song", async (data: SelectSongData) => {
+  socket.on("select_song", (data: SelectSongData) => {
     try {
       handleSelectSong(io, data);
     } catch (error) {
@@ -86,11 +111,26 @@ export function handleConnection(
     }
   });
 
+  socket.on("get_active_song", (callback) => {
+    try {
+      if (socket.data.userId) {
+        const user = getUserById(socket.data.userId);
+        if (user && user.groupId) {
+          const activeSongId = activeGroupSongs.get(user.groupId) || null;
+          callback(activeSongId);
+          return;
+        }
+      }
+      callback(null);
+    } catch (error) {
+      console.error("Error handling get_active_song event:", error);
+      callback(null);
+    }
+  });
+
   socket.on("disconnect", () => {
     handleDisconnect(socket);
   });
-
-  socket.emit("connection_status", true);
 }
 
 function handleAuthenticate(
@@ -130,11 +170,15 @@ function handleAuthenticate(
     `User ${userId} (${user.username}) authenticated with socket ${socket.id}`
   );
 
+  let activeSongId: string | undefined = undefined;
+
   if (user.groupId) {
     const group = getGroupById(user.groupId);
 
     if (group) {
       joinGroupRoom(socket, user, group.id);
+
+      activeSongId = activeGroupSongs.get(group.id);
     }
   }
 
@@ -144,6 +188,7 @@ function handleAuthenticate(
   socket.emit("auth_success", {
     connected: true,
     message: "Authentication successful",
+    activeSongId,
   });
 }
 
@@ -179,6 +224,8 @@ async function handleSelectSong(
     return;
   }
 
+  activeGroupSongs.set(user.groupId, songId);
+
   const roomId = `group:${user.groupId}`;
   console.log(`Broadcasting song ${songId} (${song.title}) to room ${roomId}`);
 
@@ -200,6 +247,8 @@ function handleQuitSong(
 
   const group = getGroupById(user.groupId);
   if (!group || group.adminId !== user.id) return;
+
+  activeGroupSongs.delete(user.groupId);
 
   const roomId = `group:${user.groupId}`;
   console.log(`Admin ${userId} quit current song for group ${user.groupId}`);

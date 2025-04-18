@@ -1,7 +1,11 @@
 import { IUser } from "../models/types";
 
 export interface ServerToClientEvents {
-  auth_success: (data: { connected: boolean; message: string }) => void;
+  auth_success: (data: {
+    connected: boolean;
+    message: string;
+    activeSongId?: string;
+  }) => void;
   song_selected: (data: { songId: string }) => void;
   song_quit: () => void;
   connection_status: (connected: boolean) => void;
@@ -11,6 +15,7 @@ export interface ClientToServerEvents {
   authenticate: (data: { userId: string }) => void;
   select_song: (data: { userId: string; songId: string }) => void;
   quit_song: (data: { userId: string }) => void;
+  get_active_song: (callback: (songId: string | null) => void) => void;
 }
 
 export interface InterServerEvents {
