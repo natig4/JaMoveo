@@ -5,7 +5,6 @@ import * as songsService from "../services/songs.service";
 interface SongsState {
   songs: ISong[];
   filteredSongs: ISong[];
-  currentSong: ISong | null;
   loading: boolean;
   searchLoading: boolean;
   error: string | null;
@@ -19,7 +18,6 @@ interface SongsState {
 const initialState: SongsState = {
   songs: [],
   filteredSongs: [],
-  currentSong: null,
   loading: false,
   searchLoading: false,
   error: null,
@@ -79,6 +77,18 @@ const songsSlice = createSlice({
     stopScrolling(state) {
       state.scrollSettings.isScrolling = false;
     },
+    cleanState(state) {
+      state.songs = [];
+      state.filteredSongs = [];
+      state.loading = false;
+      state.searchLoading = false;
+      state.error = null;
+      state.searchQuery = "";
+      state.scrollSettings = {
+        interval: 2,
+        isScrolling: false,
+      };
+    },
   },
   extraReducers: (builder) => {
     // Fetch songs cases
@@ -125,5 +135,6 @@ export const {
   setScrollInterval,
   toggleScrolling,
   stopScrolling,
+  cleanState,
 } = songsSlice.actions;
 export default songsSlice.reducer;

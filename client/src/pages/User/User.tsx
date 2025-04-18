@@ -1,17 +1,22 @@
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
 import { logoutUser } from "../../store/auth-slice";
+import { cleanState } from "../../store/songs-slice";
 import styles from "./User.module.scss";
 import StyledButton from "../../components/StyledButton/StyledButton";
 import UserProfileForm from "../../components/UserProfileForm/UserProfileForm";
 import { UserRole } from "../../model/types";
+import { useSocket } from "../../contexts/SocketContextParams";
 
 function User() {
+  const { quitSong } = useSocket();
   const { user } = useAppSelector((state) => state.auth);
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
+    quitSong();
+    dispatch(cleanState());
     await dispatch(logoutUser());
     navigate("/signin");
   };

@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { useAppSelector } from "../../hooks/redux-hooks";
-// import { logoutUser } from "../../store/auth-slice";
 
 import styles from "./SiteHeader.module.scss";
 import Logo from "../Logo/Logo";
