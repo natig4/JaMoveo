@@ -2,6 +2,8 @@ import io, { Socket } from "socket.io-client";
 import { API_URL } from "./helpers.service";
 
 type ConnectionChangeCallback = (status: boolean) => void;
+type SongSelectedCallback = (data: { songId: string }) => void;
+type ActiveSongCallback = (songId: string | null) => void;
 
 class SocketService {
   private socket: typeof Socket | null = null;
@@ -9,6 +11,7 @@ class SocketService {
   private userId: string | null = null;
   private pendingActions: (() => void)[] = [];
   private connectionListeners: ConnectionChangeCallback[] = [];
+  private activeSongListeners: SongSelectedCallback[] = [];
 
   initialize(userId: string) {
     if (this.socket) return;
@@ -36,14 +39,12 @@ class SocketService {
     if (!this.socket) return;
 
     this.socket.on("connect", () => {
-      console.log("Socket connected");
       this.setConnected(true);
 
       this.processPendingActions();
     });
 
     this.socket.on("disconnect", () => {
-      console.log("Socket disconnected");
       this.setConnected(false);
     });
 
@@ -56,8 +57,7 @@ class SocketService {
       this.setConnected(status);
     });
 
-    this.socket.on("reconnect", (attemptNumber: number) => {
-      console.log(`Reconnected after ${attemptNumber} attempts`);
+    this.socket.on("reconnect", () => {
       this.setConnected(true);
 
       if (this.userId) {
@@ -76,6 +76,32 @@ class SocketService {
       console.error("Failed to reconnect");
       this.setConnected(false);
     });
+
+    this.socket.on(
+      "auth_success",
+      (data: {
+        connected: boolean;
+        message: string;
+        activeSongId?: string;
+      }) => {
+        if (data.activeSongId) {
+          this.notifyActiveSongListeners({ songId: data.activeSongId! });
+        }
+      }
+    );
+  }
+
+  getActiveSong(callback: ActiveSongCallback) {
+    if (!this.socket || !this.connected) {
+      callback(null);
+      return;
+    }
+
+    this.socket.emit("get_active_song", callback);
+  }
+
+  private notifyActiveSongListeners(data: { songId: string }) {
+    this.activeSongListeners.forEach((callback) => callback(data));
   }
 
   private setConnected(status: boolean) {
@@ -91,13 +117,9 @@ class SocketService {
 
   private processPendingActions() {
     if (this.pendingActions.length > 0 && this.connected) {
-      console.log(`Processing ${this.pendingActions.length} pending actions`);
-
-      // Create a copy of pending actions and clear the original
       const actionsToProcess = [...this.pendingActions];
       this.pendingActions = [];
 
-      // Execute each action
       actionsToProcess.forEach((action) => {
         try {
           action();
@@ -115,7 +137,6 @@ class SocketService {
   onConnectionChange(callback: ConnectionChangeCallback) {
     this.connectionListeners.push(callback);
 
-    // Immediately call with current status
     callback(this.connected);
 
     return () => {
@@ -131,12 +152,18 @@ class SocketService {
     );
   }
 
-  onSongSelected(callback: (data: { songId: string }) => void) {
+  onSongSelected(callback: SongSelectedCallback) {
     if (!this.socket) return;
+
+    this.activeSongListeners.push(callback);
+
     this.socket.on("song_selected", callback);
 
     return () => {
       this.socket?.off("song_selected", callback);
+      this.activeSongListeners = this.activeSongListeners.filter(
+        (cb) => cb !== callback
+      );
     };
   }
 
@@ -158,9 +185,6 @@ class SocketService {
       this.pendingActions.push(() => {
         this.socket?.emit("select_song", { userId, songId });
       });
-      console.log(
-        `Added select_song to pending actions queue. Song: ${songId}`
-      );
     }
   }
 
@@ -170,11 +194,9 @@ class SocketService {
     if (this.connected && this.socket) {
       this.socket.emit("quit_song", { userId });
     } else {
-      // Queue action for when connection returns
       this.pendingActions.push(() => {
         this.socket?.emit("quit_song", { userId });
       });
-      console.log(`Added quit_song to pending actions queue.`);
     }
   }
 
@@ -187,6 +209,7 @@ class SocketService {
     this.connected = false;
     this.userId = null;
     this.pendingActions = [];
+    this.activeSongListeners = [];
 
     this.notifyConnectionListeners(false);
   }

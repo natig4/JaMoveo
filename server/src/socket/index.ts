@@ -59,7 +59,6 @@ export function setupSocketIO(
 
   io.use((socket, next) => {
     const address = socket.handshake.address;
-    console.log(`Socket connection attempt from ${address}`);
 
     try {
       const userId = socket.handshake.auth.userId as string | undefined;
@@ -68,16 +67,13 @@ export function setupSocketIO(
         if (user) {
           socket.data.userId = userId;
           socket.data.user = user;
-          console.log(`Socket authenticated with direct userId: ${userId}`);
+
           return next();
         }
       }
 
       if (config.nodeEnv === "development") {
         if (userId) {
-          console.log(
-            `Development mode: Allowing connection for userId: ${userId}`
-          );
           socket.data.userId = userId;
           const user = getUserById(userId);
           if (user) {
@@ -87,7 +83,6 @@ export function setupSocketIO(
         }
       }
 
-      console.log("No valid authentication method");
       return next(new Error("Authentication required"));
     } catch (err) {
       console.error("Socket authentication error:", err);
@@ -96,14 +91,6 @@ export function setupSocketIO(
   });
 
   io.on("connection", (socket) => {
-    const address = socket.handshake.address;
-    const userId = socket.data.userId;
-    console.log(
-      `New socket connection from ${address}${
-        userId ? ` (user: ${userId})` : ""
-      }`
-    );
-
     handleConnection(io, socket);
   });
 

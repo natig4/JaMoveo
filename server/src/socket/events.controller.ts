@@ -32,8 +32,6 @@ export function handleConnection(
     SocketData
   >
 ): void {
-  console.log("New socket connection:", socket.id);
-
   if (socket.data.userId) {
     const userId = socket.data.userId;
     const user = socket.data.user || getUserById(userId);
@@ -43,10 +41,6 @@ export function handleConnection(
         userSockets.set(userId, []);
       }
       userSockets.get(userId)?.push(socket.id);
-
-      console.log(
-        `User ${userId} (${user.username}) connected with socket ${socket.id}`
-      );
 
       let activeSongId: string | undefined = undefined;
 
@@ -156,7 +150,6 @@ function handleAuthenticate(
   const user = getUserById(userId);
 
   if (!user) {
-    console.log(`Authentication failed: User ${userId} not found`);
     socket.disconnect();
     return;
   }
@@ -165,10 +158,6 @@ function handleAuthenticate(
     userSockets.set(userId, []);
   }
   userSockets.get(userId)?.push(socket.id);
-
-  console.log(
-    `User ${userId} (${user.username}) authenticated with socket ${socket.id}`
-  );
 
   let activeSongId: string | undefined = undefined;
 
@@ -204,30 +193,24 @@ async function handleSelectSong(
   const user = getUserById(userId);
 
   if (!user || !user.groupId) {
-    console.log("Song selection failed: User not found or not in a group");
     return;
   }
 
   const group = getGroupById(user.groupId);
 
   if (!group || group.adminId !== user.id) {
-    console.log(
-      `Song selection failed: User ${userId} is not the admin of their group`
-    );
     return;
   }
 
   const song = getSongById(songId);
 
   if (!song) {
-    console.log(`Song selection failed: Song ${songId} not found`);
     return;
   }
 
   activeGroupSongs.set(user.groupId, songId);
 
   const roomId = `group:${user.groupId}`;
-  console.log(`Broadcasting song ${songId} (${song.title}) to room ${roomId}`);
 
   io.to(roomId).emit("song_selected", { songId });
 }
@@ -251,7 +234,6 @@ function handleQuitSong(
   activeGroupSongs.delete(user.groupId);
 
   const roomId = `group:${user.groupId}`;
-  console.log(`Admin ${userId} quit current song for group ${user.groupId}`);
 
   io.to(roomId).emit("song_quit");
 }
@@ -265,9 +247,6 @@ function handleDisconnect(
   >
 ): void {
   const userId = socket.data.userId;
-  console.log(
-    `Socket ${socket.id} disconnected${userId ? ` (user: ${userId})` : ""}`
-  );
 
   if (!userId) return;
 
@@ -310,6 +289,4 @@ function joinGroupRoom(
     groupRooms.set(groupId, new Set());
   }
   groupRooms.get(groupId)?.add(socket.id);
-
-  console.log(`User ${user.id} (${user.username}) joined room ${roomId}`);
 }

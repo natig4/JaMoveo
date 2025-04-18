@@ -17,32 +17,56 @@ export const SocketProvider: React.FC<SocketContextProps> = ({ children }) => {
   const [connected, setConnected] = useState(false);
   const [currentSong, setCurrentSong] = useState<ISong | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [activeCheckDone, setActiveCheckDone] = useState(false);
 
   const handleConnectionChange = useCallback((status: boolean) => {
     setConnected(status);
+
+    if (!status) {
+      setActiveCheckDone(false);
+    }
+  }, []);
+
+  const fetchSong = useCallback(async (songId: string) => {
+    if (!songId) return;
+
+    setIsLoading(true);
+    try {
+      const song = await songsService.getSongById(songId);
+      setCurrentSong(song);
+    } catch (error) {
+      console.error("Error fetching selected song:", error);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const handleSongSelected = useCallback(
-    async ({ songId }: { songId: string }) => {
-      console.log("Song selected via socket:", songId);
-      setIsLoading(true);
-
-      try {
-        const song = await songsService.getSongById(songId);
-        setCurrentSong(song);
-      } catch (error) {
-        console.error("Error fetching selected song:", error);
-      } finally {
-        setIsLoading(false);
+    ({ songId }: { songId: string }) => {
+      if (songId) {
+        fetchSong(songId);
       }
     },
-    []
+    [fetchSong]
   );
 
   const handleSongQuit = useCallback(() => {
-    console.log("Song quit via socket");
     setCurrentSong(null);
   }, []);
+
+  useEffect(() => {
+    if (!user || !connected || activeCheckDone) return;
+
+    setActiveCheckDone(true);
+
+    socketService.getActiveSong((songId) => {
+      if (!songId) {
+        return;
+      }
+
+      fetchSong(songId);
+    });
+  }, [user, connected, activeCheckDone, fetchSong]);
 
   useEffect(() => {
     if (!isAuthenticated || !user) return;
@@ -58,8 +82,8 @@ export const SocketProvider: React.FC<SocketContextProps> = ({ children }) => {
 
     return () => {
       connectionUnsubscribe();
-      songSelectedUnsubscribe?.();
-      songQuitUnsubscribe?.();
+      if (songSelectedUnsubscribe) songSelectedUnsubscribe();
+      if (songQuitUnsubscribe) songQuitUnsubscribe();
       socketService.disconnect();
     };
   }, [

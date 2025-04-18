@@ -65,7 +65,6 @@ async function startServer() {
       `Server running in ${config.nodeEnv} mode on ${protocol} port ${PORT}`
     );
     console.log(`Visit: ${protocol.toLowerCase()}://localhost:${PORT}`);
-    console.log(`Socket.IO server is running`);
   });
 }
 
