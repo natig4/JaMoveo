@@ -9,6 +9,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+
+  &.playing {
+    align-items: baseline;
+  }
 
   &:not(.playing):not(.admin) {
     border: none;
@@ -49,8 +54,19 @@
     }
   }
 
+  .quit {
+    position: absolute;
+    max-width: 10rem;
+    bottom: 2rem;
+    right: 46%;
+  }
+
   @media (max-width: variables.$breakpoint-sm) {
     margin: 2rem;
     padding: 0;
+
+    .quit {
+      right: 40%;
+    }
   }
 }

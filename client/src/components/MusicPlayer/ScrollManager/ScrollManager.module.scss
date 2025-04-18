@@ -1,0 +1,73 @@
+@use "../../../style/variables";
+@use "sass:color";
+
+.controlsContainer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 3rem;
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  border-radius: 0.8rem;
+  background-color: #f5f5f5;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 600px;
+}
+
+.scrollControls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.scrollButton {
+  padding: 0.8rem 1.5rem;
+  border-radius: 0.6rem;
+  border: none;
+  font-size: 1.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: color.adjust(variables.$yellow, $lightness: 5%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+  &:hover {
+    background-color: color.adjust(variables.$yellow, $lightness: -10%);
+    transform: translateY(-2px);
+  }
+
+  &.active {
+    background-color: variables.$brown;
+    color: white;
+    font-weight: 700;
+  }
+}
+
+.scrollSpeedContainer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1.5rem;
+  font-weight: 500;
+  width: 100%;
+  max-width: 400px;
+
+  input {
+    flex: 1;
+    height: 8px;
+    accent-color: color.adjust(variables.$yellow, $lightness: 10%);
+
+    &::-webkit-slider-thumb {
+      width: 18px;
+      height: 18px;
+    }
+  }
+}

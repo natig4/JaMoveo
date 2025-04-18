@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ISong, SongLine } from "../../model/types";
 import styles from "./MusicPlayer.module.scss";
+import ScrollManager from "./ScrollManager/ScrollManager";
 
 function isHebrewText(text: string): boolean {
   const hebrewRegex = /[\u0590-\u05FF]/;
@@ -14,15 +15,15 @@ interface MusicPlayerProps {
 
 export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
-  const [autoScroll, setAutoScroll] = useState(false);
   const [isHebrew, setIsHebrew] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(false);
   const [scrollInterval, setScrollInterval] = useState(5);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let intervalId: number;
-    if (autoScroll && song.data.length > 5) {
-      intervalId = window.setInterval(() => {
+    if (autoScroll) {
+      intervalId = setInterval(() => {
         setCurrentLineIndex((prevIndex) => {
           const nextIndex = prevIndex + 1;
           if (nextIndex < song.data.length) {
@@ -42,7 +43,6 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
     };
   }, [autoScroll, song.data.length, scrollInterval]);
 
-  // Scroll to the current line
   useEffect(() => {
     if (scrollRef.current && autoScroll) {
       const lineElements = scrollRef.current.querySelectorAll(
@@ -80,7 +80,6 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
     return () => {};
   }, [song.data]);
 
-  // Determine if chords should be shown based on instrument
   const showChords = instrument !== "vocals";
 
   return (
@@ -92,39 +91,12 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
         <h2>{song.artist}</h2>
       </div>
 
-      <div className={styles.controlsContainer}>
-        <div className={styles.controls}>
-          <div className={styles.scrollControls}>
-            <button
-              className={`${styles.scrollButton} ${
-                autoScroll ? styles.active : ""
-              }`}
-              onClick={toggleAutoScroll}
-            >
-              {autoScroll ? "Stop Auto-Scroll" : "Start Auto-Scroll"}
-            </button>
-
-            <div className={styles.scrollSpeedContainer}>
-              <label htmlFor='scrollSpeed'>Scroll Speed (sec):</label>
-              <input
-                id='scrollSpeed'
-                type='range'
-                min='2'
-                max='10'
-                step='0.5'
-                value={scrollInterval}
-                onChange={handleScrollIntervalChange}
-                disabled={!autoScroll}
-              />
-              <span>{scrollInterval}s</span>
-            </div>
-          </div>
-
-          <div className={styles.instrumentInfo}>
-            <span>Current Instrument: {instrument || "Not specified"}</span>
-          </div>
-        </div>
-      </div>
+      <ScrollManager
+        interval={scrollInterval}
+        isScrolling={autoScroll}
+        toggleIsScrolling={toggleAutoScroll}
+        handleScrollIntervalChange={handleScrollIntervalChange}
+      />
 
       <div className={styles.lyricsContainer} ref={scrollRef}>
         {song.data.map((line: SongLine, lineIndex: number) => (

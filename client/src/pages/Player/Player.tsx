@@ -1,4 +1,4 @@
-import { useAppSelector } from "../../hooks/redux-hooks";
+import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
 import { FaMusic } from "react-icons/fa";
 import { PiMusicNoteSimpleFill } from "react-icons/pi";
 
@@ -6,10 +6,17 @@ import styles from "./Player.module.scss";
 import AdminPlayer from "../../components/AdminPlayer/AdminPlayer";
 import MusicPlayer from "../../components/MusicPlayer/MusicPlayer";
 import { UserRole } from "../../model/types";
+import { clearCurrentSong } from "../../store/songs-slice";
+import StyledButton from "../../components/StyledButton/StyledButton";
 
 function PlayerPage() {
+  const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const { currentSong } = useAppSelector((state) => state.songs);
+
+  const handleQuit = () => {
+    dispatch(clearCurrentSong());
+  };
 
   const noSongMessage = (
     <div className={styles.noSongContainer}>
@@ -21,19 +28,25 @@ function PlayerPage() {
     </div>
   );
 
+  const isAdmin = user?.role === UserRole.ADMIN;
+
   return (
     <div
       className={`${styles.container} ${currentSong ? styles.playing : ""} ${
-        user?.role === UserRole.ADMIN ? styles.admin : ""
+        isAdmin ? styles.admin : ""
       }`}
     >
-      {!currentSong && user?.role === UserRole.USER
-        ? noSongMessage
-        : currentSong && (
-            <MusicPlayer song={currentSong} instrument={user?.instrument} />
-          )}
+      {!currentSong && !isAdmin && noSongMessage}
+      {currentSong && (
+        <MusicPlayer song={currentSong} instrument={user?.instrument} />
+      )}
+      {!currentSong && isAdmin && <AdminPlayer />}
 
-      {!currentSong && user?.role === UserRole.ADMIN && <AdminPlayer />}
+      {isAdmin && currentSong && (
+        <StyledButton className={styles.quit} onClick={handleQuit}>
+          Quit
+        </StyledButton>
+      )}
     </div>
   );
 }
