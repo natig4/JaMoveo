@@ -9,7 +9,7 @@ import {
 import AuthForm from "./AuthForm/AuthForm";
 
 function SignupPage({ isAdmin }: { isAdmin: boolean }) {
-  const { loading, error, isAuthenticated } = useAppSelector(
+  const { loading, error, isAuthenticated, user } = useAppSelector(
     (state) => state.auth
   );
 
@@ -17,12 +17,17 @@ function SignupPage({ isAdmin }: { isAdmin: boolean }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isAuthenticated) {
-      navigate("/");
+    if (isAuthenticated && user) {
+      if (!isAdmin && !user.groupId) {
+        // For non-admin users without a group, navigate to profile
+        navigate("/user", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     }
 
     dispatch(clearError());
-  }, [isAuthenticated, navigate, dispatch]);
+  }, [isAuthenticated, user, navigate, dispatch, isAdmin]);
 
   const handleSubmit = async (formData: {
     username: string;

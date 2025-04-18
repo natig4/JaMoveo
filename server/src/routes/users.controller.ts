@@ -77,7 +77,7 @@ export async function updateUserGroup(
     const userId = req.params.id;
     const { groupName } = req.body;
 
-    if (userId !== (req.user as any).id) {
+    if (userId !== (req.user as IUser).id) {
       res.status(403).json({
         success: false,
         message: "You can only update your own group",
@@ -93,11 +93,12 @@ export async function updateUserGroup(
       });
       return;
     }
+    const groupId = GroupsService.getGroupByName(groupName);
 
-    if (groupName && !GroupsService.getGroupByName(groupName)) {
+    if (groupName && !groupId) {
       res.status(404).json({
         success: false,
-        message: "Group not found",
+        message: "Group not found. You can only join existing groups.",
       });
       return;
     }

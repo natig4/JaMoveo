@@ -1,13 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
-import { updateUserProfile, updateUserGroup } from "../../store/auth-slice";
+import {
+  updateUserProfile,
+  updateUserGroup,
+  fetchCurrentUser,
+  clearError,
+} from "../../store/auth-slice";
 import { useInput } from "../../hooks/useInput";
 import { useGroupNameValidator } from "../../hooks/useGroupNameValidator";
 import StyledButton from "../StyledButton/StyledButton";
 import styles from "./UserProfileForm.module.scss";
 import InstrumentSelect from "../InstrumentSelect";
-import GroupSelect from "../GroupSelect/GroupSelect";
 import { UserRole } from "../../model/types";
+import Input from "../Input/Input";
 
 function UserProfileForm() {
   const dispatch = useAppDispatch();
@@ -16,6 +21,12 @@ function UserProfileForm() {
   const [activeTab, setActiveTab] = useState<"instrument" | "group">(
     "instrument"
   );
+
+  const updateTab = (tab: "instrument" | "group") => {
+    setSuccessMessage("");
+    dispatch(clearError());
+    setActiveTab(tab);
+  };
 
   const {
     value: instrument,
@@ -31,12 +42,6 @@ function UserProfileForm() {
     hasError: groupHasError,
     isChecking,
   } = useGroupNameValidator(user?.groupName || "", false);
-
-  useEffect(() => {
-    if (error) {
-      setSuccessMessage("");
-    }
-  }, [error]);
 
   const handleInstrumentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +87,9 @@ function UserProfileForm() {
           userId: user.id,
           groupName: groupName || null,
         })
-      );
+      ).unwrap();
+
+      await dispatch(fetchCurrentUser());
       setSuccessMessage("Your group has been updated successfully!");
 
       setTimeout(() => {
@@ -107,7 +114,7 @@ function UserProfileForm() {
           className={`${styles.tab} ${
             activeTab === "instrument" ? styles.activeTab : ""
           }`}
-          onClick={() => setActiveTab("instrument")}
+          onClick={() => updateTab("instrument")}
         >
           Instrument
         </button>
@@ -116,7 +123,9 @@ function UserProfileForm() {
             className={`${styles.tab} ${
               activeTab === "group" ? styles.activeTab : ""
             }`}
-            onClick={() => setActiveTab("group")}
+            onClick={() => {
+              updateTab("group");
+            }}
           >
             Group
           </button>
@@ -127,7 +136,12 @@ function UserProfileForm() {
         <form onSubmit={handleInstrumentSubmit} className={styles.form}>
           <InstrumentSelect
             value={instrument}
-            onChange={handleInstrumentChange}
+            onChange={(ev) => {
+              if (error) {
+                dispatch(clearError());
+              }
+              handleInstrumentChange(ev);
+            }}
             onBlur={handleInstrumentBlur}
             required
             hasError={instrumentHasError}
@@ -151,12 +165,21 @@ function UserProfileForm() {
         </form>
       ) : (
         <form onSubmit={handleGroupSubmit} className={styles.form}>
-          <GroupSelect
-            value={groupName || ""}
-            onChange={handleGroupChange}
-            onBlur={handleGroupBlur}
-            hasError={groupHasError}
+          <Input
+            id='groupName'
             label='Update your group'
+            type='text'
+            value={groupName || ""}
+            onChange={(ev) => {
+              if (error) {
+                dispatch(clearError());
+              }
+              handleGroupChange(ev);
+            }}
+            onBlur={handleGroupBlur}
+            placeholder='Enter group name'
+            hasError={groupHasError}
+            errorText={"Group name must be at least 3 characters"}
             className={styles.groupSelect}
           />
 
