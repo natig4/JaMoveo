@@ -6,7 +6,7 @@ import styles from "./Player.module.scss";
 import AdminPlayer from "../../components/AdminPlayer/AdminPlayer";
 import MusicPlayer from "../../components/MusicPlayer/MusicPlayer";
 import { UserRole } from "../../model/types";
-import { clearCurrentSong } from "../../store/songs-slice";
+import { clearCurrentSong, stopScrolling } from "../../store/songs-slice";
 import StyledButton from "../../components/StyledButton/StyledButton";
 
 function PlayerPage() {
@@ -15,6 +15,7 @@ function PlayerPage() {
   const { currentSong } = useAppSelector((state) => state.songs);
 
   const handleQuit = () => {
+    dispatch(stopScrolling());
     dispatch(clearCurrentSong());
   };
 

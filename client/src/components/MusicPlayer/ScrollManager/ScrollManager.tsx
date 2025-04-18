@@ -1,27 +1,29 @@
 import { FaPlay, FaPause, FaPlus, FaMinus } from "react-icons/fa";
+import { useAppDispatch, useAppSelector } from "../../../hooks/redux-hooks";
+import { setScrollInterval, toggleScrolling } from "../../../store/songs-slice";
 import styles from "./ScrollManager.module.scss";
 
 interface ScrollManagerProps {
   isRtl: boolean;
-  interval: number;
-  isScrolling: boolean;
-  toggleIsScrolling: () => void;
-  handleScrollIntervalChange: (action: "increase" | "decrease") => void;
 }
 
-export default function ScrollManager({
-  isRtl,
-  interval,
-  isScrolling,
-  toggleIsScrolling,
-  handleScrollIntervalChange,
-}: ScrollManagerProps) {
-  const increaseSpeed = () => {
-    handleScrollIntervalChange("increase");
+export default function ScrollManager({ isRtl }: ScrollManagerProps) {
+  const dispatch = useAppDispatch();
+  const { interval, isScrolling } = useAppSelector(
+    (state) => state.songs.scrollSettings
+  );
+
+  const toggleAutoScroll = () => {
+    dispatch(toggleScrolling());
   };
 
-  const decreaseSpeed = () => {
-    handleScrollIntervalChange("decrease");
+  const handleScrollIntervalChange = (action: "increase" | "decrease") => {
+    const change = action === "increase" ? 0.5 : -0.5;
+    const newInterval = interval + change;
+
+    if (newInterval >= 0.5 && newInterval <= 10) {
+      dispatch(setScrollInterval(newInterval));
+    }
   };
 
   return (
@@ -29,7 +31,7 @@ export default function ScrollManager({
       <div className={styles.speedControls}>
         <button
           className={styles.speedButton}
-          onClick={decreaseSpeed}
+          onClick={() => handleScrollIntervalChange("decrease")}
           disabled={interval <= 0.5}
           aria-label='Decrease scroll speed'
         >
@@ -40,7 +42,7 @@ export default function ScrollManager({
           className={`${styles.controlButton} ${
             isScrolling ? styles.active : ""
           }`}
-          onClick={toggleIsScrolling}
+          onClick={toggleAutoScroll}
           aria-label={isScrolling ? "Pause auto-scroll" : "Play auto-scroll"}
         >
           {isScrolling ? <FaPause /> : <FaPlay />}
@@ -53,7 +55,7 @@ export default function ScrollManager({
 
         <button
           className={styles.speedButton}
-          onClick={increaseSpeed}
+          onClick={() => handleScrollIntervalChange("increase")}
           disabled={interval >= 10}
           aria-label='Increase scroll speed'
         >

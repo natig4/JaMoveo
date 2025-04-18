@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { ISong, SongLine } from "../../model/types";
+import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
+import { stopScrolling } from "../../store/songs-slice";
 import styles from "./MusicPlayer.module.scss";
 import ScrollManager from "./ScrollManager/ScrollManager";
 
@@ -16,24 +18,27 @@ interface MusicPlayerProps {
 export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [isHebrew, setIsHebrew] = useState(false);
-  const [autoScroll, setAutoScroll] = useState(false);
-  const [scrollInterval, setScrollInterval] = useState(5);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const dispatch = useAppDispatch();
+  const { isScrolling, interval } = useAppSelector(
+    (state) => state.songs.scrollSettings
+  );
 
   useEffect(() => {
     let intervalId: number;
-    if (autoScroll) {
+    if (isScrolling) {
       intervalId = setInterval(() => {
         setCurrentLineIndex((prevIndex) => {
           const nextIndex = prevIndex + 1;
           if (nextIndex < song.data.length) {
             return nextIndex;
           } else {
-            setAutoScroll(false);
-            return prevIndex;
+            dispatch(stopScrolling());
+            return 0;
           }
         });
-      }, scrollInterval * 1000);
+      }, interval * 1000);
     }
 
     return () => {
@@ -41,10 +46,10 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
         clearInterval(intervalId);
       }
     };
-  }, [autoScroll, song.data.length, scrollInterval]);
+  }, [isScrolling, song.data.length, interval, dispatch]);
 
   useEffect(() => {
-    if (scrollRef.current && autoScroll) {
+    if (scrollRef.current && isScrolling) {
       const lineElements = scrollRef.current.querySelectorAll(
         `.${styles.line}`
       );
@@ -55,20 +60,11 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
         });
       }
     }
-  }, [currentLineIndex, autoScroll]);
+  }, [currentLineIndex, isScrolling]);
 
-  const toggleAutoScroll = () => {
-    setAutoScroll((prev) => !prev);
-    if (!autoScroll) {
-      setCurrentLineIndex(0);
-    }
-  };
-
-  const handleScrollIntervalChange = (action: "increase" | "decrease") => {
-    setScrollInterval(
-      (prevInterval) => prevInterval + 0.5 * (action === "increase" ? 1 : -1)
-    );
-  };
+  useEffect(() => {
+    setCurrentLineIndex(0);
+  }, [song.id]);
 
   useEffect(() => {
     const isHebrew =
@@ -76,8 +72,6 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
         ? isHebrewText(song.data[0][0].lyrics)
         : false;
     setIsHebrew(isHebrew);
-
-    return () => {};
   }, [song.data]);
 
   const showChords = instrument !== "vocals";
@@ -86,25 +80,19 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
     <div
       className={`${styles.playerContainer} ${isHebrew ? styles.rtlText : ""}`}
     >
-      <div className={`${styles.header} ${isHebrew ? styles.rtl : ""}`}>
+      <div className={styles.header}>
         <h1>{song.title}</h1>
         <h2>{song.artist}</h2>
       </div>
 
-      <ScrollManager
-        isRtl={isHebrew}
-        interval={scrollInterval}
-        isScrolling={autoScroll}
-        toggleIsScrolling={toggleAutoScroll}
-        handleScrollIntervalChange={handleScrollIntervalChange}
-      />
+      <ScrollManager isRtl={isHebrew} />
 
       <div className={styles.lyricsContainer} ref={scrollRef}>
         {song.data.map((line: SongLine, lineIndex: number) => (
           <div
             key={`line-${lineIndex}`}
             className={`${styles.line} ${
-              lineIndex === currentLineIndex && autoScroll
+              lineIndex === currentLineIndex && isScrolling
                 ? styles.activeLine
                 : ""
             }`}

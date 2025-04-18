@@ -10,6 +10,10 @@ interface SongsState {
   searchLoading: boolean;
   error: string | null;
   searchQuery: string;
+  scrollSettings: {
+    interval: number;
+    isScrolling: boolean;
+  };
 }
 
 const initialState: SongsState = {
@@ -20,6 +24,10 @@ const initialState: SongsState = {
   searchLoading: false,
   error: null,
   searchQuery: "",
+  scrollSettings: {
+    interval: 2,
+    isScrolling: false,
+  },
 };
 
 export const fetchSongs = createAsyncThunk(
@@ -27,7 +35,6 @@ export const fetchSongs = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const songs = await songsService.getAllSongs();
-      // Randomize songs order
       return [...songs].sort(() => Math.random() - 0.5);
     } catch (error) {
       return rejectWithValue(
@@ -72,7 +79,7 @@ export const selectSong = createAsyncThunk(
       }
 
       if (!song) {
-        throw new Error("ISong not found");
+        throw new Error("Song not found");
       }
 
       return song;
@@ -96,6 +103,15 @@ const songsSlice = createSlice({
     },
     setSearchQuery(state, action: PayloadAction<string>) {
       state.searchQuery = action.payload;
+    },
+    setScrollInterval(state, action: PayloadAction<number>) {
+      state.scrollSettings.interval = action.payload;
+    },
+    toggleScrolling(state) {
+      state.scrollSettings.isScrolling = !state.scrollSettings.isScrolling;
+    },
+    stopScrolling(state) {
+      state.scrollSettings.isScrolling = false;
     },
   },
   extraReducers: (builder) => {
@@ -147,6 +163,7 @@ const songsSlice = createSlice({
         state.currentSong = action.payload;
         state.loading = false;
         state.error = null;
+        state.scrollSettings.isScrolling = false;
       }
     );
     builder.addCase(selectSong.rejected, (state, action) => {
@@ -156,6 +173,12 @@ const songsSlice = createSlice({
   },
 });
 
-export const { setCurrentSong, clearCurrentSong, setSearchQuery } =
-  songsSlice.actions;
+export const {
+  setCurrentSong,
+  clearCurrentSong,
+  setSearchQuery,
+  setScrollInterval,
+  toggleScrolling,
+  stopScrolling,
+} = songsSlice.actions;
 export default songsSlice.reducer;
