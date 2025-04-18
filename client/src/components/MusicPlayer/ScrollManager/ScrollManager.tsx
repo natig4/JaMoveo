@@ -1,46 +1,64 @@
+import { FaPlay, FaPause, FaPlus, FaMinus } from "react-icons/fa";
 import styles from "./ScrollManager.module.scss";
 
-interface IScrollProps {
+interface ScrollManagerProps {
+  isRtl: boolean;
   interval: number;
   isScrolling: boolean;
   toggleIsScrolling: () => void;
-  handleScrollIntervalChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleScrollIntervalChange: (action: "increase" | "decrease") => void;
 }
 
 export default function ScrollManager({
+  isRtl,
   interval,
   isScrolling,
   toggleIsScrolling,
   handleScrollIntervalChange,
-}: IScrollProps) {
-  return (
-    <div className={styles.controlsContainer}>
-      <div className={styles.controls}>
-        <div className={styles.scrollControls}>
-          <button
-            className={`${styles.scrollButton} ${
-              isScrolling ? styles.active : ""
-            }`}
-            onClick={toggleIsScrolling}
-          >
-            {isScrolling ? "Stop Auto-Scroll" : "Start Auto-Scroll"}
-          </button>
+}: ScrollManagerProps) {
+  const increaseSpeed = () => {
+    handleScrollIntervalChange("increase");
+  };
 
-          <div className={styles.scrollSpeedContainer}>
-            <label htmlFor='scrollSpeed'>Scroll Speed (sec):</label>
-            <input
-              id='scrollSpeed'
-              type='range'
-              min='2'
-              max='10'
-              step='0.5'
-              value={interval}
-              onChange={handleScrollIntervalChange}
-              disabled={!isScrolling}
-            />
-            <span>{interval}s</span>
-          </div>
+  const decreaseSpeed = () => {
+    handleScrollIntervalChange("decrease");
+  };
+
+  return (
+    <div className={`${styles.controlsContainer} ${isRtl ? styles.rtl : ""}`}>
+      <div className={styles.speedControls}>
+        <button
+          className={styles.speedButton}
+          onClick={decreaseSpeed}
+          disabled={interval <= 0.5}
+          aria-label='Decrease scroll speed'
+        >
+          <FaMinus />
+        </button>
+
+        <button
+          className={`${styles.controlButton} ${
+            isScrolling ? styles.active : ""
+          }`}
+          onClick={toggleIsScrolling}
+          aria-label={isScrolling ? "Pause auto-scroll" : "Play auto-scroll"}
+        >
+          {isScrolling ? <FaPause /> : <FaPlay />}
+        </button>
+
+        <div className={styles.speedDisplay}>
+          <label className={styles.speedLabel}>per line</label>
+          <span>{interval}s</span>
         </div>
+
+        <button
+          className={styles.speedButton}
+          onClick={increaseSpeed}
+          disabled={interval >= 10}
+          aria-label='Increase scroll speed'
+        >
+          <FaPlus />
+        </button>
       </div>
     </div>
   );

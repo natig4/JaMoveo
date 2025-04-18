@@ -64,10 +64,10 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
     }
   };
 
-  const handleScrollIntervalChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setScrollInterval(Number(e.target.value));
+  const handleScrollIntervalChange = (action: "increase" | "decrease") => {
+    setScrollInterval(
+      (prevInterval) => prevInterval + 0.5 * (action === "increase" ? 1 : -1)
+    );
   };
 
   useEffect(() => {
@@ -92,6 +92,7 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
       </div>
 
       <ScrollManager
+        isRtl={isHebrew}
         interval={scrollInterval}
         isScrolling={autoScroll}
         toggleIsScrolling={toggleAutoScroll}
