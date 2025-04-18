@@ -17,6 +17,12 @@
     left: 4rem;
   }
 
+  &:not(.rtl) {
+    .speedDisplay {
+      flex-direction: row-reverse;
+    }
+  }
+
   @media (max-width: variables.$breakpoint-sm) {
     right: 1rem;
     &.rtl {
@@ -67,7 +73,8 @@
   grid-template-columns: 1fr 1fr 1fr;
   align-items: center;
   justify-items: center;
-  gap: 1rem;
+  column-gap: 1rem;
+  row-gap: 0.2rem;
 }
 
 .speedButton {
