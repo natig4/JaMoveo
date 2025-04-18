@@ -19,6 +19,7 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
   const [isHebrew, setIsHebrew] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const prevLineIndexRef = useRef(0);
 
   const dispatch = useAppDispatch();
   const { isScrolling, interval } = useAppSelector(
@@ -30,13 +31,7 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
     if (isScrolling) {
       intervalId = setInterval(() => {
         setCurrentLineIndex((prevIndex) => {
-          const nextIndex = prevIndex + 1;
-          if (nextIndex < song.data.length) {
-            return nextIndex;
-          } else {
-            dispatch(stopScrolling());
-            return 0;
-          }
+          return (prevIndex + 1) % song.data.length;
         });
       }, interval * 1000);
     }
@@ -46,7 +41,17 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
         clearInterval(intervalId);
       }
     };
-  }, [isScrolling, song.data.length, interval, dispatch]);
+  }, [isScrolling, song.data.length, interval]);
+
+  useEffect(() => {
+    const isLastLine = currentLineIndex === 0 && isScrolling;
+
+    if (isLastLine && prevLineIndexRef.current === song.data.length - 1) {
+      dispatch(stopScrolling());
+    }
+
+    prevLineIndexRef.current = currentLineIndex;
+  }, [currentLineIndex, isScrolling, song.data.length, dispatch]);
 
   useEffect(() => {
     if (scrollRef.current && isScrolling) {
@@ -67,11 +72,11 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
   }, [song.id]);
 
   useEffect(() => {
-    const isHebrew =
+    const hasHebrewText =
       song.data.length > 0 && song.data[0].length > 0
         ? isHebrewText(song.data[0][0].lyrics)
         : false;
-    setIsHebrew(isHebrew);
+    setIsHebrew(hasHebrewText);
   }, [song.data]);
 
   const showChords = instrument !== "vocals";
