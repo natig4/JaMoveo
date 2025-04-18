@@ -74,16 +74,7 @@ function handleRegister(role: UserRole) {
 
       const user = await registerUser(userDataWithoutGroup, role, groupName);
 
-      let responseUser = user;
-      if (user.groupId) {
-        const group = GroupsService.getGroupById(user.groupId);
-        if (group) {
-          responseUser = {
-            ...user,
-            groupName: group.name,
-          };
-        }
-      }
+      const responseUser = getUserWithGroupName(user);
 
       req.login(user, (err) => {
         if (err) {
@@ -179,7 +170,7 @@ export function login(req: Request, res: Response, next: NextFunction): void {
 
         return res.status(200).json({
           success: true,
-          user,
+          user: getUserWithGroupName(user as IUser),
         });
       });
     }
@@ -252,4 +243,18 @@ export function googleAuthCallback(req: Request, res: Response): void {
   }
 
   res.redirect(req.user ? "/" : "/signin");
+}
+
+function getUserWithGroupName(user: IUser) {
+  if (user.groupId) {
+    const group = GroupsService.getGroupById(user.groupId);
+
+    if (group) {
+      return {
+        ...user,
+        groupName: group.name,
+      };
+    }
+  }
+  return user;
 }

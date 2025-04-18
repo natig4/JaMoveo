@@ -7,16 +7,16 @@ interface AuthRedirectProps {
 }
 
 function AuthRedirect({ children }: AuthRedirectProps) {
-  const { isAuthenticated, loading, initialized } = useAppSelector(
+  const { isAuthenticated, loading, initialized, user } = useAppSelector(
     (state) => state.auth
   );
   const navigate = useNavigate();
 
   useEffect(() => {
     if (isAuthenticated) {
-      navigate("/");
+      navigate(!user?.groupId ? "/user" : "/");
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, user?.groupId]);
 
   if (loading && !initialized) {
     return <div className='auth-loading'>Loading...</div>;
