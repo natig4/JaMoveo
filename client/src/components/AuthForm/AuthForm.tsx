@@ -26,7 +26,6 @@ function AuthForm({
   isLoading = false,
   error = null,
 }: AuthFormProps) {
-  // Input states with validation
   const {
     value: username,
     handleInputChange: handleUsernameChange,
@@ -40,8 +39,9 @@ function AuthForm({
     handleInputBlur: handleEmailBlur,
     hasError: emailHasError,
   } = useInput("", (value) => {
-    if (!value && formType === "signin") return true; // Email is optional for signin
-    return /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value);
+    if (!value && formType === "signin") return true;
+
+    return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value);
   });
 
   const {
@@ -50,7 +50,7 @@ function AuthForm({
     handleInputBlur: handleInstrumentBlur,
     hasError: instrumentHasError,
   } = useInput("", (value) => {
-    if (formType === "signin") return true; // No instrument for signin
+    if (formType === "signin") return true;
     return value.trim() !== "";
   });
 
@@ -61,7 +61,6 @@ function AuthForm({
     hasError: passwordHasError,
   } = useInput("", (value) => value.trim().length >= 6);
 
-  // UI states
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
