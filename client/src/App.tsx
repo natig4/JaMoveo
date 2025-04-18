@@ -1,10 +1,9 @@
 import { useEffect } from "react";
 import { BrowserRouter } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-
 import { fetchCurrentUser } from "./store/auth-slice";
 import { AppDispatch, RootState } from "./store";
-
+import { SocketProvider } from "./contexts/SocketContext";
 import Routes from "./Routes";
 
 function App() {
@@ -21,7 +20,9 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Routes />
+      <SocketProvider>
+        <Routes />
+      </SocketProvider>
     </BrowserRouter>
   );
 }

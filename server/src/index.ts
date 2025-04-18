@@ -9,6 +9,7 @@ import config from "./config/index";
 import { loadSongs } from "./services/songs.service";
 import { loadUsers } from "./services/users.service";
 import { loadGroups } from "./services/groups.service";
+import { setupSocketIO } from "./socket";
 
 const PORT = config.port;
 
@@ -28,8 +29,7 @@ async function startServer() {
 
   let server;
 
-  // Use HTTPS only in development mode and if cert files exist
-  if (config.nodeEnv === "development") {
+  if (config.nodeEnv === "development" && config.useHttps) {
     const keyPath = path.join(__dirname, "..", "key.pem");
     const certPath = path.join(__dirname, "..", "cert.pem");
 
@@ -57,12 +57,15 @@ async function startServer() {
     server = http.createServer(app);
   }
 
+  setupSocketIO(server);
+
   server.listen(PORT, () => {
     const protocol = server instanceof https.Server ? "HTTPS" : "HTTP";
     console.log(
       `Server running in ${config.nodeEnv} mode on ${protocol} port ${PORT}`
     );
     console.log(`Visit: ${protocol.toLowerCase()}://localhost:${PORT}`);
+    console.log(`Socket.IO server is running`);
   });
 }
 

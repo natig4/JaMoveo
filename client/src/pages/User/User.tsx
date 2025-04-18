@@ -4,6 +4,7 @@ import { logoutUser } from "../../store/auth-slice";
 import styles from "./User.module.scss";
 import StyledButton from "../../components/StyledButton/StyledButton";
 import UserProfileForm from "../../components/UserProfileForm/UserProfileForm";
+import { UserRole } from "../../model/types";
 
 function User() {
   const { user } = useAppSelector((state) => state.auth);
@@ -25,7 +26,7 @@ function User() {
         {user?.groupName ? (
           <p className={styles.groupInfo}>
             Current group: <strong>{user.groupName}</strong>
-            {user.role === "admin" && (
+            {user.role === UserRole.ADMIN && (
               <span className={styles.adminBadge}>Admin</span>
             )}
           </p>

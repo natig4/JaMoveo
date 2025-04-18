@@ -1,3 +1,4 @@
+// client/src/pages/Player/Player.tsx
 import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
 import { FaMusic } from "react-icons/fa";
 import { PiMusicNoteSimpleFill } from "react-icons/pi";
@@ -8,11 +9,12 @@ import MusicPlayer from "../../components/MusicPlayer/MusicPlayer";
 import { UserRole } from "../../model/types";
 import { clearCurrentSong, stopScrolling } from "../../store/songs-slice";
 import StyledButton from "../../components/StyledButton/StyledButton";
+import { useSocket } from "../../contexts/SocketContextParams";
 
 function PlayerPage() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { currentSong } = useAppSelector((state) => state.songs);
+  const { currentSong } = useSocket();
 
   const handleQuit = () => {
     dispatch(stopScrolling());
@@ -42,7 +44,11 @@ function PlayerPage() {
       {currentSong && (
         <MusicPlayer song={currentSong} instrument={user?.instrument} />
       )}
-      {!currentSong && isAdmin && <AdminPlayer />}
+      {!currentSong && isAdmin && (
+        <>
+          <AdminPlayer />
+        </>
+      )}
 
       {isAdmin && currentSong && (
         <StyledButton className={styles.quit} onClick={handleQuit}>

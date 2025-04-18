@@ -1,15 +1,26 @@
 import { FaPlay } from "react-icons/fa";
-import { ISong } from "../../model/types";
+import { ISong, UserRole } from "../../model/types";
 
 import styles from "./Song.module.scss";
-import { useAppDispatch } from "../../hooks/redux-hooks";
-import { selectSong } from "../../store/songs-slice";
+import { useAppSelector } from "../../hooks/redux-hooks";
+import { useSocket } from "../../contexts/SocketContextParams";
 
 export default function Song({ song }: { song: ISong }) {
-  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
+  const { selectSong, connected } = useSocket();
 
-  const handlePlaySong = (songId: string) => {
-    dispatch(selectSong(songId));
+  const handlePlaySong = () => {
+    if (user?.role === UserRole.USER) {
+      return;
+    }
+
+    selectSong(song.id);
+
+    if (!connected) {
+      console.warn(
+        "Socket not connected. Group members will not receive this selection."
+      );
+    }
   };
 
   return (
@@ -31,7 +42,7 @@ export default function Song({ song }: { song: ISong }) {
         <div className={styles.songControls}>
           <button
             className={styles.playButton}
-            onClick={() => handlePlaySong(song.id)}
+            onClick={() => handlePlaySong()}
             aria-label={`Play ${song.title} by ${song.artist}`}
           >
             <FaPlay />
