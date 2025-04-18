@@ -8,13 +8,14 @@ import app from "./app";
 import config from "./config/index";
 import { loadSongs } from "./services/songs.service";
 import { loadUsers } from "./services/users.service";
+import { loadGroups } from "./services/groups.service";
 
 const PORT = config.port;
 
 // TODO: in case of moving from json files to proper DB remove this
 async function initializeData() {
   try {
-    await Promise.all([loadSongs(), loadUsers()]);
+    await Promise.all([loadSongs(), loadUsers(), loadGroups()]);
     console.log("Data initialization complete");
   } catch (error) {
     console.error("Failed to initialize data:", error);
@@ -34,10 +35,11 @@ async function startServer() {
 
     if (existsSync(keyPath) && existsSync(certPath)) {
       try {
-        const key = readFileSync(keyPath);
-        const cert = readFileSync(certPath);
+        // const key = readFileSync(keyPath);
+        // const cert = readFileSync(certPath);
 
-        server = https.createServer({ key, cert }, app);
+        server = http.createServer(app);
+        // server = https.createServer({ key, cert }, app);
         console.log("Starting server with HTTPS");
       } catch (error) {
         console.error(

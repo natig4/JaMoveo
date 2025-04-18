@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import styles from "./AuthForm.module.scss";
 import { useInput } from "../../hooks/useInput";
+import { useGroupNameValidator } from "../../hooks/useGroupNameValidator";
 import Input from "../Input/Input";
 import Logo from "../Logo/Logo";
 import StyledButton from "../StyledButton/StyledButton";
@@ -14,6 +15,7 @@ interface AuthFormProps {
     password: string;
     email?: string;
     instrument?: string;
+    groupName?: string;
     rememberMe?: boolean;
   }) => void;
   isLoading?: boolean;
@@ -54,6 +56,18 @@ function AuthForm({
     return value.trim() !== "";
   });
 
+  const isAdminSignup = formType === "signup-admin";
+
+  const {
+    value: groupName,
+    handleInputChange: handleGroupChange,
+    handleInputBlur: handleGroupBlur,
+    hasError: groupNameHasError,
+    isChecking,
+    valueIsValid: groupNameIsValid,
+    error: groupNameError,
+  } = useGroupNameValidator("", isAdminSignup);
+
   const {
     value: password,
     handleInputChange: handlePasswordChange,
@@ -83,16 +97,23 @@ function AuthForm({
       return;
     }
 
+    if (
+      isAdminSignup &&
+      (groupNameHasError || !groupNameIsValid || groupName.trim().length < 3)
+    ) {
+      return;
+    }
+
     onSubmit({
       username,
       password,
       ...(formType !== "signin" && { email, instrument }),
+      ...(formType !== "signin" && { groupName: groupName || undefined }),
       rememberMe,
     });
   };
 
   const isLogin = formType === "signin";
-  const isAdminSignup = formType === "signup-admin";
 
   const getHeaderTitle = () => {
     if (isLogin) return "Log in";
@@ -147,6 +168,36 @@ function AuthForm({
             />
           )}
 
+          {!isLogin && (
+            <Input
+              id='groupName'
+              label={
+                isAdminSignup ? "Create a new group" : "Join a group (optional)"
+              }
+              type='text'
+              value={groupName}
+              onChange={handleGroupChange}
+              onBlur={handleGroupBlur}
+              placeholder={
+                isAdminSignup
+                  ? "Your new group name"
+                  : "Group name (you can change later)"
+              }
+              required={isAdminSignup}
+              hasError={groupNameHasError}
+              errorText={
+                groupNameError ||
+                (isAdminSignup
+                  ? "Group name is required (min. 3 characters) and must be unique"
+                  : "Group name must be at least 3 characters (or empty)")
+              }
+            />
+          )}
+
+          {isChecking && (
+            <p className={styles.checkingMessage}>Checking group name...</p>
+          )}
+
           <Input
             id='password'
             label={isLogin ? "Enter your Password" : "Create password"}
@@ -187,7 +238,13 @@ function AuthForm({
               isLoading ||
               usernameHasError ||
               passwordHasError ||
-              (!isLogin && (emailHasError || instrumentHasError))
+              (isAdminSignup &&
+                (groupNameHasError ||
+                  !groupNameIsValid ||
+                  isChecking ||
+                  groupName.trim().length < 3)) ||
+              (!isLogin && emailHasError) ||
+              (!isLogin && instrumentHasError)
             }
           >
             {isLoading ? "Loading..." : isLogin ? "Log in" : "Register"}

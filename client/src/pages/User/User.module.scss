@@ -22,11 +22,30 @@
   p {
     font-size: 1.8rem;
     color: variables.$grey;
+    margin-bottom: 0.5rem;
+  }
+
+  .groupInfo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+
+    .adminBadge {
+      display: inline-block;
+      background-color: variables.$yellow;
+      color: black;
+      font-size: 1.2rem;
+      font-weight: 500;
+      padding: 0.2rem 0.6rem;
+      border-radius: 1rem;
+      text-transform: uppercase;
+    }
   }
 }
 
 .logoutSection {
-  margin-top: 3rem;
+  margin-top: 1rem;
   display: flex;
   justify-content: center;
 }

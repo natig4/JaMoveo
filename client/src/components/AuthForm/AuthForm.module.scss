@@ -30,6 +30,14 @@
   font-size: 1.6rem;
 }
 
+.checkingMessage {
+  color: variables.$grey;
+  font-size: 1.4rem;
+  font-style: italic;
+  margin-top: -0.5rem;
+  margin-bottom: 0.5rem;
+}
+
 .logo {
   font-size: 5rem;
 }

@@ -13,6 +13,34 @@
   }
 }
 
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 2rem;
+}
+
+.tab {
+  padding: 1rem 1.5rem;
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: variables.$grey;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+
+  &.activeTab {
+    color: variables.$brown;
+    border-bottom: 2px solid variables.$yellow;
+  }
+
+  &:hover:not(.activeTab) {
+    color: variables.$brown;
+    border-bottom: 2px solid rgba(variables.$yellow, 0.5);
+  }
+}
+
 .form {
   display: flex;
   flex-direction: column;
@@ -34,9 +62,37 @@
   margin-top: 1rem;
 }
 
+.loadingMessage {
+  color: variables.$grey;
+  font-size: 1.4rem;
+  font-style: italic;
+}
+
+.currentGroup {
+  color: variables.$grey;
+  font-size: 1.5rem;
+  margin-top: -0.5rem;
+
+  strong {
+    color: variables.$brown;
+  }
+}
+
+.groupSelect {
+  margin-bottom: 0.5rem;
+}
+
 @media (max-width: variables.$breakpoint-sm) {
   .formContainer {
     padding: 1.5rem;
-    margin: 1rem;
+  }
+
+  .tabs {
+    margin-bottom: 1.5rem;
+  }
+
+  .tab {
+    padding: 1rem;
+    font-size: 1.4rem;
   }
 }

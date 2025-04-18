@@ -38,6 +38,7 @@ function PlayerPage() {
       }`}
     >
       {!currentSong && !isAdmin && noSongMessage}
+
       {currentSong && (
         <MusicPlayer song={currentSong} instrument={user?.instrument} />
       )}

@@ -3,6 +3,7 @@ import * as path from "path";
 import { IUser, UserRole, IGoogleUserProfile } from "../models/types";
 import { hashPassword } from "../utils/auth";
 import { randomUUID } from "crypto";
+import { getGroupById, getGroupByName } from "./groups.service";
 
 const users: IUser[] = [];
 const usersFilePath = path.join(__dirname, "..", "..", "data", "users.json");
@@ -37,13 +38,14 @@ export async function loadUsers(): Promise<void> {
 
 export function getAllUsers(): Omit<IUser, "password" | "googleId">[] {
   return users.map(
-    ({ id, username, email, role, displayName, instrument }) => ({
+    ({ id, username, email, role, displayName, instrument, groupId }) => ({
       id,
       username,
       email,
       role,
       displayName,
       instrument,
+      groupId,
     })
   );
 }
@@ -64,16 +66,18 @@ export function getUserByEmail(email: string): IUser | undefined {
   return users.find((user) => user.email === email);
 }
 
+export function getUsersInGroup(groupId: string): IUser[] {
+  return users.filter((user) => user.groupId === groupId);
+}
+
 export async function findOrCreateGoogleUser(
   profile: IGoogleUserProfile
 ): Promise<IUser> {
-  // First, check if user already exists with this Google ID
   let user = getUserByGoogleId(profile.googleId);
   if (user) {
     return user;
   }
 
-  // Check if a user with the same email already exists
   if (profile.email) {
     user = getUserByEmail(profile.email);
     if (user) {
@@ -101,7 +105,9 @@ export async function addUser(userData: Omit<IUser, "id">): Promise<IUser> {
   }
 
   if (userData.email && users.some((u) => u.email === userData.email)) {
-    throw new Error("Email already exists");
+    throw new Error(
+      "This Email address is already registered with another user"
+    );
   }
 
   const newUser: IUser = {
@@ -118,8 +124,8 @@ export async function addUser(userData: Omit<IUser, "id">): Promise<IUser> {
   users.push(newUser);
   await saveUsers();
 
-  const { password, ...userWithoutPassword } = newUser;
-  return userWithoutPassword as IUser;
+  const { password, googleId, ...userWithoutSensitiveInfo } = newUser;
+  return userWithoutSensitiveInfo as IUser;
 }
 
 export async function updateUser(
@@ -135,7 +141,7 @@ export async function updateUser(
   }
 
   // Only allow updating specific fields
-  const allowedUpdates = ["displayName", "instrument", "email"];
+  const allowedUpdates = ["displayName", "instrument", "email", "groupId"];
   const updatedUser = { ...users[userIndex] };
 
   for (const field of allowedUpdates) {
@@ -148,6 +154,56 @@ export async function updateUser(
   await saveUsers();
 
   const { password, googleId, ...userWithoutSensitiveInfo } = updatedUser;
+  return userWithoutSensitiveInfo;
+}
+
+export async function getUserWithGroupDetails(userId: string): Promise<any> {
+  const user = getUserById(userId);
+  if (!user) {
+    return null;
+  }
+
+  const { password, googleId, ...userInfo } = user;
+
+  if (user.groupId) {
+    const group = getGroupById(user.groupId);
+    if (group) {
+      return {
+        ...userInfo,
+        groupName: group.name,
+      };
+    }
+  }
+
+  return userInfo;
+}
+
+export async function updateUserGroup(
+  userId: string,
+  groupName: string | null
+): Promise<Omit<IUser, "password" | "googleId"> | null> {
+  const userIndex = users.findIndex(
+    (user) => String(user.id) === String(userId)
+  );
+
+  if (userIndex === -1) {
+    return null;
+  }
+
+  if (!groupName) {
+    users[userIndex].groupId = undefined;
+  } else {
+    const group = getGroupByName(groupName);
+    if (!group) {
+      return null;
+    }
+
+    users[userIndex].groupId = group.id;
+  }
+
+  await saveUsers();
+
+  const { password, googleId, ...userWithoutSensitiveInfo } = users[userIndex];
   return userWithoutSensitiveInfo;
 }
 

@@ -28,3 +28,25 @@ export async function updateUserProfile(
 
   return data.user;
 }
+
+export async function updateUserGroup(
+  userId: string,
+  groupName: string | null
+): Promise<IUser> {
+  const response = await fetch(
+    `${API_URL}/users/${userId}/group`,
+    getConfig({ groupName }, "PATCH")
+  );
+
+  const data = (await response.json()) as ApiResponse;
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to update group");
+  }
+
+  if (!data.user) {
+    throw new Error("IUser data missing in response");
+  }
+
+  return data.user;
+}

@@ -11,11 +11,12 @@ export async function register(
   username: string,
   password: string,
   email?: string,
-  instrument?: string
+  instrument?: string,
+  groupName?: string
 ): Promise<IUser> {
   const response = await fetch(
     `${API_URL}/auth/register`,
-    getConfig({ username, password, email, instrument })
+    getConfig({ username, password, email, instrument, groupName })
   );
 
   const data = (await response.json()) as AuthResponse;
@@ -25,7 +26,7 @@ export async function register(
   }
 
   if (!data.user) {
-    throw new Error("IUser data missing in response");
+    throw new Error("User data missing in response");
   }
 
   return data.user;
@@ -35,11 +36,12 @@ export async function registerAdmin(
   username: string,
   password: string,
   email?: string,
-  instrument?: string
+  instrument?: string,
+  groupName?: string
 ): Promise<IUser> {
   const response = await fetch(
     `${API_URL}/auth/register-admin`,
-    getConfig({ username, password, email, instrument })
+    getConfig({ username, password, email, instrument, groupName })
   );
 
   const data = (await response.json()) as AuthResponse;
@@ -49,7 +51,7 @@ export async function registerAdmin(
   }
 
   if (!data.user) {
-    throw new Error("IUser data missing in response");
+    throw new Error("User data missing in response");
   }
 
   return data.user;

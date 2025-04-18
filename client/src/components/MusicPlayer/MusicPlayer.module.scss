@@ -10,6 +10,9 @@
 
   &.rtlText {
     direction: rtl;
+    .header {
+      flex-direction: row-reverse;
+    }
   }
 
   &::-webkit-scrollbar {
@@ -37,10 +40,6 @@
   align-items: baseline;
   justify-content: center;
   padding-bottom: 2rem;
-
-  &.rtl {
-    flex-direction: row-reverse;
-  }
 
   h1 {
     font-size: 5rem;

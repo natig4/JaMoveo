@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import passport from "passport";
 import * as UsersService from "../services/users.service";
+import * as GroupsService from "../services/groups.service";
 import { IUser, UserRole } from "../models/types";
 
 // Default session options - 24 hours
@@ -13,7 +14,11 @@ const EXTENDED_SESSION_OPTIONS = {
   maxAge: 30 * 24 * 60 * 60 * 1000,
 };
 
-async function registerUser(userData: Omit<IUser, "id">, role: UserRole) {
+async function registerUser(
+  userData: Omit<IUser, "id">,
+  role: UserRole,
+  groupName?: string
+) {
   if (!userData.username || !userData.password) {
     throw new Error("Username and password are required");
   }
@@ -23,10 +28,39 @@ async function registerUser(userData: Omit<IUser, "id">, role: UserRole) {
     throw new Error("Username already exists");
   }
 
+  if (role === UserRole.ADMIN) {
+    if (!groupName || groupName.trim().length < 3) {
+      throw new Error("Group name is required for admin (min. 3 characters)");
+    }
+
+    const existingGroup = GroupsService.getGroupByName(groupName);
+    if (existingGroup) {
+      throw new Error("Group name already exists");
+    }
+  }
+
   const newUser = await UsersService.addUser({
     ...userData,
     role,
   });
+
+  if (role === UserRole.ADMIN && groupName) {
+    try {
+      const newGroup = await GroupsService.createGroup(groupName, newUser.id);
+
+      await UsersService.updateUser(newUser.id, { groupId: newGroup.id });
+      newUser.groupId = newGroup.id;
+    } catch (error) {
+      console.error("Error creating group during registration:", error);
+    }
+  } else if (role === UserRole.USER && groupName) {
+    const group = GroupsService.getGroupByName(groupName);
+    if (group) {
+      await UsersService.updateUser(newUser.id, { groupId: group.id });
+      newUser.groupId = group.id;
+    }
+    // If group doesn't exist, don't throw an error - user will need to select a group later
+  }
 
   const { password, ...userWithoutPassword } = newUser;
   return userWithoutPassword;
@@ -36,7 +70,20 @@ function handleRegister(role: UserRole) {
   return async (req: Request, res: Response): Promise<void> => {
     try {
       const userData = req.body;
-      const user = await registerUser(userData, role);
+      const { groupName, ...userDataWithoutGroup } = userData;
+
+      const user = await registerUser(userDataWithoutGroup, role, groupName);
+
+      let responseUser = user;
+      if (user.groupId) {
+        const group = GroupsService.getGroupById(user.groupId);
+        if (group) {
+          responseUser = {
+            ...user,
+            groupName: group.name,
+          };
+        }
+      }
 
       req.login(user, (err) => {
         if (err) {
@@ -54,7 +101,7 @@ function handleRegister(role: UserRole) {
 
         res.status(201).json({
           success: true,
-          user,
+          user: responseUser,
         });
       });
     } catch (error) {
@@ -64,6 +111,9 @@ function handleRegister(role: UserRole) {
         const statusMap: Record<string, number> = {
           "Username already exists": 409,
           "Username and password are required": 400,
+          "Group name already exists": 409,
+          "Group name is required for admin (min. 3 characters)": 400,
+          "This Email address is already registered with another user": 400,
         };
 
         const status = statusMap[error.message];
@@ -167,7 +217,10 @@ export function logout(req: Request, res: Response): void {
   });
 }
 
-export function getCurrentUser(req: Request, res: Response): void {
+export async function getCurrentUser(
+  req: Request,
+  res: Response
+): Promise<void> {
   if (!req.isAuthenticated() || !req.user) {
     res.status(401).json({
       success: false,
@@ -176,10 +229,21 @@ export function getCurrentUser(req: Request, res: Response): void {
     return;
   }
 
-  res.status(200).json({
-    success: true,
-    user: req.user,
-  });
+  try {
+    const userId = (req.user as IUser).id;
+    const user = await UsersService.getUserWithGroupDetails(userId);
+
+    res.status(200).json({
+      success: true,
+      user,
+    });
+  } catch (error) {
+    console.error("Error getting current user:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve user details",
+    });
+  }
 }
 
 export function googleAuthCallback(req: Request, res: Response): void {

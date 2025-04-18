@@ -22,6 +22,16 @@ function User() {
         <p>
           Current instrument: <strong>{user?.instrument || "None"}</strong>
         </p>
+        {user?.groupName ? (
+          <p className={styles.groupInfo}>
+            Current group: <strong>{user.groupName}</strong>
+            {user.role === "admin" && (
+              <span className={styles.adminBadge}>Admin</span>
+            )}
+          </p>
+        ) : (
+          <p className={styles.groupInfo}>No group joined</p>
+        )}
       </div>
 
       <UserProfileForm />

@@ -29,8 +29,13 @@ function SignupPage({ isAdmin }: { isAdmin: boolean }) {
     password: string;
     email?: string;
     instrument?: string;
+    groupName?: string;
   }) => {
     if (!formData.username.trim() || !formData.password.trim()) {
+      return;
+    }
+
+    if (isAdmin && !formData.groupName?.trim()) {
       return;
     }
 
@@ -42,6 +47,7 @@ function SignupPage({ isAdmin }: { isAdmin: boolean }) {
         password: formData.password,
         email: formData.email,
         instrument: formData.instrument,
+        groupName: formData.groupName!,
       })
     );
   };

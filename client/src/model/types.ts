@@ -4,11 +4,20 @@ export interface IUser {
   role: UserRole;
   instrument?: string;
   imageUrl?: string;
+  groupId?: string;
+  groupName?: string;
 }
 
 export interface IUserCredentials {
   username: string;
   password: string;
+}
+
+export interface IGroup {
+  id: string;
+  name: string;
+  adminId: string;
+  createdAt: string;
 }
 
 export interface ISongItem {

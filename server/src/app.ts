@@ -8,6 +8,7 @@ import config from "./config/index";
 import { authRouter } from "./routes/auth.router";
 import { songsRouter } from "./routes/songs.router";
 import { usersRouter } from "./routes/users.router";
+import { groupsRouter } from "./routes/groups.router";
 
 const app = express();
 
@@ -90,6 +91,7 @@ if (config.nodeEnv === "development") {
 app.use("/users", usersRouter);
 app.use("/auth", authRouter);
 app.use("/song", songsRouter);
+app.use("/groups", groupsRouter);
 
 if (config.nodeEnv === "development") {
   app.get("*", (req: Request, res: Response, next: NextFunction) => {

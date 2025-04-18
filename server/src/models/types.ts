@@ -18,6 +18,13 @@ export interface IUserCredentials {
   password?: string;
 }
 
+export interface IGroup {
+  id: string;
+  name: string;
+  adminId: string;
+  createdAt: Date;
+}
+
 export interface IUser {
   id: string;
   username: string;
@@ -27,6 +34,8 @@ export interface IUser {
   googleId?: string;
   displayName?: string;
   role: UserRole;
+  groupId?: string;
+  groupName?: string;
 }
 
 export const UserRole = {

@@ -9,10 +9,12 @@ import { isAdmin } from "../utils/auth";
 
 export const songsRouter = express.Router();
 
-songsRouter.get("/", isAdmin, getAllSongs);
+songsRouter.use(isAdmin);
 
-songsRouter.get("/search", isAdmin, searchSongs);
+songsRouter.get("/", getAllSongs);
 
-songsRouter.get("/:id", isAdmin, getSongById);
+songsRouter.get("/search", searchSongs);
 
-songsRouter.post("/", isAdmin, addSong);
+songsRouter.get("/:id", getSongById);
+
+songsRouter.post("/", addSong);

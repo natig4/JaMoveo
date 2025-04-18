@@ -27,11 +27,13 @@ export const registerUser = createAsyncThunk(
       password,
       email,
       instrument,
+      groupName,
     }: {
       username: string;
       password: string;
       email?: string;
       instrument?: string;
+      groupName?: string;
     },
     { rejectWithValue }
   ) => {
@@ -40,7 +42,8 @@ export const registerUser = createAsyncThunk(
         username,
         password,
         email,
-        instrument
+        instrument,
+        groupName
       );
       return user;
     } catch (error) {
@@ -59,11 +62,13 @@ export const registerAdminUser = createAsyncThunk(
       password,
       email,
       instrument,
+      groupName,
     }: {
       username: string;
       password: string;
       email?: string;
       instrument?: string;
+      groupName: string;
     },
     { rejectWithValue }
   ) => {
@@ -72,7 +77,8 @@ export const registerAdminUser = createAsyncThunk(
         username,
         password,
         email,
-        instrument
+        instrument,
+        groupName
       );
       return user;
     } catch (error) {
@@ -160,6 +166,29 @@ export const updateUserProfile = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error instanceof Error ? error.message : "Failed to update profile"
+      );
+    }
+  }
+);
+
+export const updateUserGroup = createAsyncThunk(
+  "auth/updateGroup",
+  async (
+    {
+      userId,
+      groupName,
+    }: {
+      userId: string;
+      groupName: string | null;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const updatedUser = await userService.updateUserGroup(userId, groupName);
+      return updatedUser;
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Failed to update group"
       );
     }
   }
@@ -285,6 +314,24 @@ const authSlice = createSlice({
       }
     );
     builder.addCase(updateUserProfile.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    // Group update cases
+    builder.addCase(updateUserGroup.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(
+      updateUserGroup.fulfilled,
+      (state, action: PayloadAction<IUser>) => {
+        state.user = action.payload;
+        state.loading = false;
+        state.error = null;
+      }
+    );
+    builder.addCase(updateUserGroup.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
     });
