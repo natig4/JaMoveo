@@ -66,7 +66,7 @@ function AuthForm({
     isChecking,
     valueIsValid: groupNameIsValid,
     error: groupNameError,
-  } = useGroupNameValidator("", isAdminSignup);
+  } = useGroupNameValidator("", isAdminSignup, true);
 
   const {
     value: password,

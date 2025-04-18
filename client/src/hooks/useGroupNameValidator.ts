@@ -3,7 +3,8 @@ import { checkGroupName } from "../services/groups.service";
 
 export function useGroupNameValidator(
   defaultValue: string = "",
-  isAdmin: boolean = false
+  isAdmin: boolean = false,
+  isSignIn = false
 ) {
   const [enteredValue, setEnteredValue] = useState(defaultValue);
   const [didEdit, setDidEdit] = useState(false);
@@ -13,7 +14,8 @@ export function useGroupNameValidator(
 
   const valueIsValid = isAdmin
     ? enteredValue.trim().length >= 3 && !isExists && !error
-    : enteredValue.trim().length >= 3;
+    : (enteredValue.trim().length >= 3 && !isSignIn) ||
+      enteredValue.length === 0;
 
   const handleInputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
