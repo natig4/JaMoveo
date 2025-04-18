@@ -18,8 +18,7 @@ function SignupPage({ isAdmin }: { isAdmin: boolean }) {
 
   useEffect(() => {
     if (isAuthenticated && user) {
-      if (!isAdmin && !user.groupId) {
-        // For non-admin users without a group, navigate to profile
+      if (!isAdmin && (!user.groupId || !user.instrument)) {
         navigate("/user", { replace: true });
       } else {
         navigate("/", { replace: true });

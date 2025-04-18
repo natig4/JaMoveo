@@ -4,9 +4,13 @@ import { getGoogleAuthUrl } from "../../services/auth.service";
 
 interface GoogleSignInButtonProps {
   className?: string;
+  isRegister?: boolean;
 }
 
-function GoogleSignInButton({ className = "" }: GoogleSignInButtonProps) {
+function GoogleSignInButton({
+  isRegister,
+  className = "",
+}: GoogleSignInButtonProps) {
   const handleGoogleSignIn = () => {
     window.location.href = getGoogleAuthUrl();
   };
@@ -18,7 +22,7 @@ function GoogleSignInButton({ className = "" }: GoogleSignInButtonProps) {
       className={`${styles.googleButton} ${className}`}
     >
       <FcGoogle className={styles.googleIcon} />
-      <span>Sign in with Google</span>
+      <span>{isRegister ? "register" : "Sign"} in with Google</span>
     </button>
   );
 }

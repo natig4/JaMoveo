@@ -36,6 +36,7 @@ export interface IUser {
   role: UserRole;
   groupId?: string;
   groupName?: string;
+  imageUrl?: string;
 }
 
 export const UserRole = {
@@ -51,4 +52,5 @@ export interface IGoogleUserProfile {
   email?: string;
   displayName?: string;
   role: UserRole;
+  imageUrl?: string;
 }

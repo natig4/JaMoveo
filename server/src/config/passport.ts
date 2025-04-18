@@ -81,6 +81,7 @@ passport.use(
           username: profile.displayName || `user_${profile.id}`,
           email: profile.emails?.[0]?.value,
           displayName: profile.displayName,
+          imageUrl: profile.photos?.[0]?.value,
           role: "user",
         });
 

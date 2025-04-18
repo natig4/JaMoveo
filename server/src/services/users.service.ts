@@ -95,6 +95,7 @@ export async function findOrCreateGoogleUser(
     googleId: profile.googleId,
     displayName: profile.displayName,
     role: profile.role || UserRole.USER,
+    imageUrl: profile.imageUrl,
     // No password needed for Google-authenticated users
   });
 }

@@ -131,12 +131,8 @@ function AuthForm({
           <h1>{getHeaderTitle()}</h1>
         </div>
 
-        {isLogin && (
-          <>
-            <GoogleSignInButton />
-            <div className={styles.orDivider}>or</div>
-          </>
-        )}
+        <GoogleSignInButton />
+        <div className={styles.orDivider}>or</div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <Input
