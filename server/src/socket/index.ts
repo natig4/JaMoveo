@@ -10,21 +10,6 @@ import {
   SocketData,
 } from "./types";
 
-function parseCookie(cookieString: string): Record<string, string> {
-  const cookies: Record<string, string> = {};
-
-  if (!cookieString) return cookies;
-
-  cookieString.split(";").forEach((cookie) => {
-    const parts = cookie.split("=");
-    const name = parts[0].trim();
-    const value = parts.slice(1).join("=").trim();
-    cookies[name] = value;
-  });
-
-  return cookies;
-}
-
 export function setupSocketIO(
   httpServer: HttpServer
 ): SocketIOServer<
@@ -58,8 +43,6 @@ export function setupSocketIO(
   });
 
   io.use((socket, next) => {
-    const address = socket.handshake.address;
-
     try {
       const userId = socket.handshake.auth.userId as string | undefined;
       if (userId) {
