@@ -78,6 +78,12 @@
     box-shadow: 0 0 0 4px rgba(variables.$yellow, 0.25);
     transform: scale(1.02);
   }
+
+  &.reverse {
+    .wordContainer {
+      flex-direction: column-reverse;
+    }
+  }
 }
 
 .wordContainer {
