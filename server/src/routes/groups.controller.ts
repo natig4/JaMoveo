@@ -145,6 +145,104 @@ export async function createGroup(req: Request, res: Response): Promise<void> {
   }
 }
 
+export async function createGroupAndPromote(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    if (!req.isAuthenticated() || !req.user) {
+      res.status(401).json({
+        success: false,
+        message: "Not authenticated",
+      });
+      return;
+    }
+
+    const user = req.user as IUser;
+    if (user.role === UserRole.ADMIN) {
+      res.status(403).json({
+        success: false,
+        message: "User is already an admin",
+      });
+      return;
+    }
+
+    const { name } = req.body;
+
+    if (!name || typeof name !== "string" || name.trim().length < 3) {
+      res.status(400).json({
+        success: false,
+        message: "Valid group name is required (min 3 characters)",
+      });
+      return;
+    }
+
+    const existingGroup = GroupsService.getGroupByName(name);
+    if (existingGroup) {
+      res.status(409).json({
+        success: false,
+        message: "Group name already exists",
+      });
+      return;
+    }
+
+    const updatedUser = await UsersService.updateUser(user.id, {
+      role: UserRole.ADMIN,
+    });
+
+    if (!updatedUser) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to update user role",
+      });
+      return;
+    }
+
+    const newGroup = await GroupsService.createGroup(name, user.id);
+
+    const finalUser = await UsersService.updateUser(user.id, {
+      groupId: newGroup.id,
+    });
+
+    if (!finalUser) {
+      res.status(500).json({
+        success: false,
+        message: "Failed to update user group",
+      });
+      return;
+    }
+
+    const userWithGroupName = {
+      ...finalUser,
+      groupName: newGroup.name,
+    };
+
+    res.status(201).json({
+      success: true,
+      group: newGroup,
+      user: userWithGroupName,
+    });
+  } catch (error) {
+    console.error("Error creating group and promoting user:", error);
+
+    if (
+      error instanceof Error &&
+      error.message === "Group name already exists"
+    ) {
+      res.status(409).json({
+        success: false,
+        message: error.message,
+      });
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to create group and promote user",
+    });
+  }
+}
+
 export async function getGroupUsers(
   req: Request,
   res: Response

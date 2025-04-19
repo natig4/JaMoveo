@@ -142,7 +142,13 @@ export async function updateUser(
   }
 
   // Only allow updating specific fields
-  const allowedUpdates = ["displayName", "instrument", "email", "groupId"];
+  const allowedUpdates = [
+    "displayName",
+    "instrument",
+    "email",
+    "groupId",
+    "role",
+  ];
   const updatedUser = { ...users[userIndex] };
 
   for (const field of allowedUpdates) {

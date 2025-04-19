@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
 import { IUser } from "../model/types";
 import * as authService from "../services/auth.service";
 import * as userService from "../services/users.service";
+import * as groupService from "../services/groups.service";
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -194,6 +195,27 @@ export const updateUserGroup = createAsyncThunk(
   }
 );
 
+export const createUserGroup = createAsyncThunk(
+  "auth/createGroup",
+  async (
+    {
+      groupName,
+    }: {
+      groupName: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      const newGroup = await groupService.createNewGroup(groupName);
+      return newGroup.user;
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Failed to create group"
+      );
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -332,6 +354,24 @@ const authSlice = createSlice({
       }
     );
     builder.addCase(updateUserGroup.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    // Create group cases
+    builder.addCase(createUserGroup.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(
+      createUserGroup.fulfilled,
+      (state, action: PayloadAction<IUser>) => {
+        state.user = action.payload;
+        state.loading = false;
+        state.error = null;
+      }
+    );
+    builder.addCase(createUserGroup.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
     });

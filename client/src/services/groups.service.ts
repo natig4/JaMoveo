@@ -1,5 +1,5 @@
-import { IGroup } from "../model/types";
-import { API_URL } from "./helpers.service";
+import { IGroup, IUser } from "../model/types";
+import { API_URL, getConfig } from "./helpers.service";
 
 interface ApiResponse {
   success: boolean;
@@ -7,6 +7,7 @@ interface ApiResponse {
   exists?: boolean;
   groups?: IGroup[];
   group?: IGroup;
+  user?: IUser;
 }
 
 export async function getAllGroups(): Promise<IGroup[]> {
@@ -38,4 +39,28 @@ export async function checkGroupName(name: string): Promise<boolean> {
   }
 
   return data.exists || false;
+}
+
+export async function createNewGroup(
+  name: string
+): Promise<{ group: IGroup; user: IUser }> {
+  const response = await fetch(
+    `${API_URL}/groups/create-and-promote`,
+    getConfig(JSON.stringify({ name }))
+  );
+
+  const data = (await response.json()) as ApiResponse;
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to create group");
+  }
+
+  if (!data.group || !data.user) {
+    throw new Error("Invalid response from server");
+  }
+
+  return {
+    group: data.group,
+    user: data.user,
+  };
 }

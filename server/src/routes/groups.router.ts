@@ -5,6 +5,7 @@ import {
   createGroup,
   getGroupUsers,
   checkGroupName,
+  createGroupAndPromote,
 } from "./groups.controller";
 import { isAuthenticated, isAdmin } from "../utils/auth";
 
@@ -17,5 +18,7 @@ groupsRouter.use(isAuthenticated);
 groupsRouter.get("/", getAllGroups);
 groupsRouter.get("/:id", getGroupById);
 groupsRouter.get("/:id/users", getGroupUsers);
+
+groupsRouter.post("/create-and-promote", createGroupAndPromote);
 
 groupsRouter.post("/", isAdmin, createGroup);

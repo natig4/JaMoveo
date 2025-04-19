@@ -78,6 +78,30 @@
   }
 }
 
+.createGroupInfo {
+  background-color: #f9f9f5;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  border-left: 3px solid variables.$yellow;
+
+  p {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: variables.$brown;
+    margin-bottom: 0.5rem;
+  }
+
+  ul {
+    padding-left: 2rem;
+
+    li {
+      font-size: 1.4rem;
+      color: variables.$grey;
+      margin: 0.4rem 0;
+    }
+  }
+}
+
 @media (max-width: variables.$breakpoint-sm) {
   .formContainer {
     padding: 1.5rem;
@@ -85,10 +109,12 @@
 
   .tabs {
     margin-bottom: 1.5rem;
+    flex-wrap: wrap;
   }
 
   .tab {
     padding: 1rem;
     font-size: 1.4rem;
+    flex: 1;
   }
 }
