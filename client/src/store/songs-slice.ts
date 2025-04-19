@@ -82,10 +82,10 @@ export const loadMoreThenFetch = createAsyncThunk(
             fetched: fetchResult.payload,
           };
         } else {
-          return rejectWithValue("fetchSongs failed");
+          return rejectWithValue("Fetching songs failed failed");
         }
       } else {
-        return rejectWithValue("loadMoreSongs failed");
+        return rejectWithValue("Loading more songs failed");
       }
     } catch (error) {
       return rejectWithValue(
