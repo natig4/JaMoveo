@@ -35,11 +35,11 @@ async function startServer() {
 
     if (existsSync(keyPath) && existsSync(certPath)) {
       try {
-        // const key = readFileSync(keyPath);
-        // const cert = readFileSync(certPath);
+        const key = readFileSync(keyPath);
+        const cert = readFileSync(certPath);
 
-        server = http.createServer(app);
-        // server = https.createServer({ key, cert }, app);
+        // server = http.createServer(app);
+        server = https.createServer({ key, cert }, app);
         console.log("Starting server with HTTPS");
       } catch (error) {
         console.error(
@@ -54,7 +54,7 @@ async function startServer() {
     }
   } else {
     // In production, use plain HTTP (provider handles HTTPS)
-    server = http.createServer(app);
+    server = https.createServer(app);
   }
 
   setupSocketIO(server);
