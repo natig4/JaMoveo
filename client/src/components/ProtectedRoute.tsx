@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { useAppSelector } from "../hooks/redux-hooks";
+import LoadingPage from "./Loading/Loading";
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -12,7 +13,7 @@ function ProtectedRoute({ children }: ProtectedRouteProps) {
   );
 
   if (loading && !initialized) {
-    return <div className='auth-loading'>Loading...</div>;
+    return <LoadingPage />;
   }
 
   if (!isAuthenticated && initialized) {

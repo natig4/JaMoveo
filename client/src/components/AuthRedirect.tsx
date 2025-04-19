@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppSelector } from "../hooks/redux-hooks";
+import LoadingPage from "./Loading/Loading";
 
 interface AuthRedirectProps {
   children: React.ReactNode;
@@ -19,7 +20,7 @@ function AuthRedirect({ children }: AuthRedirectProps) {
   }, [isAuthenticated, navigate, user?.groupId, user?.instrument]);
 
   if (loading && !initialized) {
-    return <div className='auth-loading'>Loading...</div>;
+    return <LoadingPage />;
   }
 
   return !isAuthenticated ? <>{children}</> : null;
