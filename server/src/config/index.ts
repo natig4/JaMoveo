@@ -17,7 +17,7 @@ const development: Config = {
   nodeEnv: "development",
   dataPath: process.env.DATA_PATH || "./data",
   clientUrl: process.env.CLIENT_URL || "http://localhost:5173",
-  serverUrl: process.env.SERVER_URL || "http://localhost:8000",
+  serverUrl: process.env.SERVER_URL || "https://localhost:8000",
   corsOrigin: [
     "http://localhost:5173",
     "http://localhost:3000",
