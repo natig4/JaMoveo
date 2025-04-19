@@ -9,11 +9,16 @@ import { UserRole } from "../../model/types";
 import { stopScrolling } from "../../store/songs-slice";
 import StyledButton from "../../components/StyledButton/StyledButton";
 import { useSocket } from "../../contexts/SocketContextParams";
+import { Navigate } from "react-router-dom";
 
 function PlayerPage() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
   const { currentSong, quitSong, connected, isLoading } = useSocket();
+
+  if (!user?.instrument || !user?.groupId) {
+    return <Navigate to='/user' replace />;
+  }
 
   const handleQuit = () => {
     dispatch(stopScrolling());
