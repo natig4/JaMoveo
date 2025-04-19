@@ -10,6 +10,7 @@ import { stopScrolling } from "../../store/songs-slice";
 import StyledButton from "../../components/StyledButton/StyledButton";
 import { useSocket } from "../../contexts/SocketContextParams";
 import { Navigate } from "react-router-dom";
+import LoadingPage from "../../components/Loading/Loading";
 
 function PlayerPage() {
   const dispatch = useAppDispatch();
@@ -56,12 +57,7 @@ function PlayerPage() {
         isAdmin ? styles.admin : ""
       }`}
     >
-      {isLoading && (
-        <div className={styles.loadingOverlay}>
-          <div className={styles.spinner}></div>
-          <p>Loading song...</p>
-        </div>
-      )}
+      {isLoading && <LoadingPage text='Song' />}
 
       {!currentSong && !isAdmin && noSongMessage}
 

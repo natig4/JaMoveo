@@ -254,15 +254,97 @@ function processChordAndLyricPairs(
 }
 
 function parseChordAndLyric(chordLine: string, lyricLine: string): ISongItem[] {
-  console.log("parseChordAndLyric chordLine", chordLine);
-  console.log("parseChordAndLyric lyricLine", lyricLine);
+  // Clean inputs
+  const cleanChordLine = chordLine.replace(/&nbsp;/g, " ").trim();
+  const cleanLyricLine = lyricLine.replace(/&nbsp;/g, " ").trim();
 
-  const chords = chordLine.split("&nbsp").reverse();
-  const lyrics = lyricLine.split("&nbsp");
-  return lyrics.map((lyric, i) => ({
-    lyrics: lyric || "",
-    chords: chords[i] || "",
-  }));
+  console.log("Clean chord line:", cleanChordLine);
+  console.log("Clean lyric line:", cleanLyricLine);
+
+  // Special case handling for completely empty lines
+  if (!cleanLyricLine && !cleanChordLine) {
+    return [];
+  }
+
+  // Handle case with only chords, no lyrics
+  if (!cleanLyricLine && cleanChordLine) {
+    return cleanChordLine
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((chord) => ({
+        lyrics: "",
+        chords: chord,
+      }));
+  }
+
+  // Handle case with only lyrics, no chords
+  if (!cleanChordLine && cleanLyricLine) {
+    return cleanLyricLine
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) => ({
+        lyrics: word,
+        chords: "",
+      }));
+  }
+
+  // Special case for section headers like "מעבר:" or "סיום:"
+  if (cleanLyricLine.match(/^(מעבר|סיום):$/)) {
+    return [
+      {
+        lyrics: cleanLyricLine,
+        chords: cleanChordLine,
+      },
+    ];
+  }
+
+  // For normal lyric lines with chords in Hebrew (RTL):
+  // 1. Get all lyrics and chords as arrays
+  const lyricWords = cleanLyricLine.split(/\s+/).filter(Boolean);
+  const chordWords = cleanChordLine.split(/\s+/).filter(Boolean);
+
+  // 2. Create the result array
+  const result: ISongItem[] = [];
+
+  // 3. Match chords to lyrics based on RTL order:
+  // - The first chord corresponds to the last word (rightmost in Hebrew)
+  // - The second chord corresponds to the second-to-last word
+  // - And so on...
+  for (let i = 0; i < lyricWords.length; i++) {
+    // Get the lyric word from left-to-right order (as stored in the array)
+    const lyricWord = lyricWords[i];
+
+    // Calculate the corresponding chord index based on RTL order
+    // The first chord (index 0) should match the last word (index lyricWords.length-1)
+    const chordIndex = lyricWords.length - 1 - i;
+
+    // Get the chord if available, or empty string
+    const chord =
+      chordIndex >= 0 && chordIndex < chordWords.length
+        ? chordWords[chordIndex]
+        : "";
+
+    result.push({
+      lyrics: lyricWord,
+      chords: chord,
+    });
+  }
+
+  // If there are extra chords, add them as standalone items at the beginning
+  if (chordWords.length > lyricWords.length) {
+    const extraChords = chordWords.slice(
+      0,
+      chordWords.length - lyricWords.length
+    );
+    for (const chord of extraChords) {
+      result.unshift({
+        lyrics: "",
+        chords: chord,
+      });
+    }
+  }
+
+  return result;
 }
 
 function isChordText(text: string): boolean {

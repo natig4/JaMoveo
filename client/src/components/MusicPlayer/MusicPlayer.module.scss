@@ -71,6 +71,7 @@
   transition: background-color 0.3s;
   border-radius: 0.6rem;
   align-items: flex-end;
+  gap: 1rem;
 
   &.activeLine {
     background-color: rgba(variables.$yellow, 0.25);
@@ -83,6 +84,7 @@
   display: inline-flex;
   flex-direction: column;
   position: relative;
+  align-items: flex-start;
 }
 
 .chord {
