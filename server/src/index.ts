@@ -54,7 +54,7 @@ async function startServer() {
     }
   } else {
     // In production, use plain HTTP (provider handles HTTPS)
-    server = https.createServer(app);
+    server = http.createServer(app);
   }
 
   setupSocketIO(server);
