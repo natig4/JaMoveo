@@ -10,7 +10,7 @@
 
   &.rtlText {
     direction: rtl;
-    .header {
+    .header:not(.rtl) {
       flex-direction: row-reverse;
     }
   }

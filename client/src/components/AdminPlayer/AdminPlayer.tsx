@@ -1,17 +1,30 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
-import { fetchSongs } from "../../store/songs-slice";
+import { fetchSongs, loadMoreSongs } from "../../store/songs-slice";
 import SearchSongs from "../SearchSongs/SearchSongs";
 import styles from "./AdminPlayer.module.scss";
 import Song from "../Song/Song";
+import LoadMoreButton from "../LoadMoreButton/LoadMoreButton";
 
 export default function AdminPlayer() {
   const dispatch = useAppDispatch();
-  const { filteredSongs, loading, searchLoading, error, searchQuery } =
-    useAppSelector((state) => state.songs);
+  const {
+    filteredSongs,
+    loading,
+    searchLoading,
+    loadMoreLoading,
+    error,
+    loadMoreError,
+    searchQuery,
+    hasMoreSongs,
+  } = useAppSelector((state) => state.songs);
 
   useEffect(() => {
     dispatch(fetchSongs());
+  }, [dispatch]);
+
+  const handleLoadMore = useCallback(() => {
+    dispatch(loadMoreSongs());
   }, [dispatch]);
 
   if (loading && filteredSongs.length === 0 && !searchLoading) {
@@ -24,7 +37,15 @@ export default function AdminPlayer() {
 
   return (
     <div className={styles.adminSection}>
-      <SearchSongs />
+      <div className={styles.actions}>
+        <SearchSongs />
+        <LoadMoreButton
+          onClick={handleLoadMore}
+          loading={loadMoreLoading}
+          hasMore={hasMoreSongs}
+          error={loadMoreError}
+        />
+      </div>
       <div className={styles.header}>
         <h2>
           {searchQuery

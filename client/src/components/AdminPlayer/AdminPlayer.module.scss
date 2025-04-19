@@ -7,6 +7,12 @@
   align-self: flex-start;
 }
 
+.actions {
+  padding-bottom: 4rem;
+  display: flex;
+  gap: 10rem;
+}
+
 .header {
   margin-bottom: 1.6rem;
 
@@ -48,5 +54,9 @@
 @media (max-width: variables.$breakpoint-sm) {
   .adminSection {
     padding: 0;
+  }
+
+  .actions {
+    padding-bottom: 2rem;
   }
 }
