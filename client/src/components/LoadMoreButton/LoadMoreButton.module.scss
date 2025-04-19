@@ -24,6 +24,7 @@
   transition: background-color 0.2s, transform 0.1s;
   width: 100%;
   max-width: 20rem;
+  min-height: 4.2rem;
 
   &:hover:not(:disabled) {
     background-color: color.adjust(variables.$yellow, $lightness: 10%);

@@ -1,6 +1,6 @@
 import axios from "axios";
 import { CheerioAPI, load } from "cheerio";
-import { ISong } from "../models/types";
+import { ISong, ISongItem } from "../models/types";
 import { getAllSongs, addSong } from "./songs.service";
 
 export const CHORDS_URL = "https://www.tab4u.com";
@@ -141,47 +141,57 @@ function extractSongData(songPage: CheerioAPI): ISong["data"] {
       const $table = songPage(this);
       const rows = $table.find("tr");
 
-      for (let i = 0; i < rows.length; i += 2) {
-        if (i + 1 >= rows.length) break; // Ensure we have pairs
+      const processedRows: Array<{ type: "chord" | "lyric"; content: string }> =
+        [];
 
-        const chordRow = songPage(rows[i]);
-        const lyricRow = songPage(rows[i + 1]);
+      rows.each((_i, rowEl) => {
+        const $row = songPage(rowEl);
 
-        const chordCells = chordRow.find("td.chords");
-        const lyricCells = lyricRow.find("td.song");
+        // Skip rows with class "br" or display:none style
+        if (
+          $row.hasClass("br") ||
+          $row.attr("style")?.includes("display: none") ||
+          $row.attr("style")?.includes("display:none")
+        ) {
+          return;
+        }
 
-        if (chordCells.length === 0 || lyricCells.length === 0) continue;
+        const cells = $row.find("td");
 
-        const firstChordCell = chordCells.first();
-        const firstLyricCell = lyricCells.first();
+        // Skip empty rows
+        if (!cells.length || !cells.text().trim()) return;
 
-        const isChordRow =
-          firstChordCell.hasClass("chords") ||
-          firstChordCell
-            .text()
-            .trim()
-            .match(/^[A-G][#b]?m?7?$/);
+        // Also skip cells with display:none
+        if (
+          cells.attr("style")?.includes("display: none") ||
+          cells.attr("style")?.includes("display:none")
+        ) {
+          return;
+        }
 
-        const isLyricRow =
-          firstLyricCell.hasClass("song") ||
-          (!isChordRow && firstLyricCell.text().trim().length > 0);
+        let rowType: "chord" | "lyric" | null = null;
+        const content = cells.text().trim();
 
-        if (!isChordRow && !isLyricRow) continue;
+        if (
+          cells.hasClass("chords") ||
+          cells.find(".chords").length ||
+          content.split(/\s+/).some(isChordText)
+        ) {
+          rowType = "chord";
+        } else if (
+          cells.hasClass("song") ||
+          cells.find(".song").length ||
+          content.length > 0
+        ) {
+          rowType = "lyric";
+        }
 
-        const line: Array<{ lyrics: string; chords?: string }> = [];
+        if (rowType) {
+          processedRows.push({ type: rowType, content });
+        }
+      });
 
-        const lyricText = lyricRow.text().trim();
-        if (!lyricText) continue;
-
-        const chordText = chordRow.text().trim();
-
-        line.push({
-          lyrics: lyricText,
-          chords: chordText || undefined,
-        });
-
-        songData.push(line);
-      }
+      processSongRows(processedRows, songData);
     });
   } catch (error) {
     console.error("Error extracting song data:", error);
@@ -212,4 +222,44 @@ async function crawlPage(url: string): Promise<CheerioAPI> {
     console.error(`Error crawling page ${url}:`, error);
     throw error;
   }
+}
+
+function processSongRows(
+  processedRows: Array<{ type: "chord" | "lyric"; content: string }>,
+  songData: ISong["data"]
+) {
+  for (let i = 0; i < processedRows.length - 1; i++) {
+    if (
+      processedRows[i].type === "chord" &&
+      processedRows[i + 1].type === "lyric"
+    ) {
+      // Standard case: chord followed by lyric
+      songData.push([
+        {
+          lyrics: processedRows[i + 1].content,
+          chords: processedRows[i].content,
+        },
+      ]);
+      i++;
+    } else if (
+      processedRows[i].type === "lyric" &&
+      processedRows[i + 1].type === "chord"
+    ) {
+      // Reversed case: lyric followed by chord
+      songData.push([
+        {
+          lyrics: processedRows[i].content,
+          chords: processedRows[i + 1].content,
+        },
+      ]);
+
+      i++;
+    }
+  }
+}
+
+function isChordText(text: string): boolean {
+  return /^[A-G][#b]?(m|maj|dim|aug|sus|add)?[0-9]*(\/[A-G][#b]?)?$/.test(
+    text.trim()
+  );
 }
