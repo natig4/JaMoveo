@@ -73,6 +73,7 @@ passport.use(
       clientSecret: config.googleClientSecret,
       callbackURL: `${config.serverUrl}/auth/google/callback`,
       scope: ["profile", "email"],
+      proxy: true,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {

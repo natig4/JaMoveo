@@ -14,6 +14,7 @@ import { groupsRouter } from "./routes/groups.router";
 const app = express();
 
 if (config.nodeEnv === "production") {
+  app.set("trust proxy", 1);
   app.use(helmet());
 } else {
   app.use(
