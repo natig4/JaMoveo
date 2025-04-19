@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
-import { fetchSongs, loadMoreSongs } from "../../store/songs-slice";
+import { fetchSongs, loadMoreThenFetch } from "../../store/songs-slice";
 import SearchSongs from "../SearchSongs/SearchSongs";
 import styles from "./AdminPlayer.module.scss";
 import Song from "../Song/Song";
@@ -24,7 +24,7 @@ export default function AdminPlayer() {
   }, [dispatch]);
 
   const handleLoadMore = useCallback(() => {
-    dispatch(loadMoreSongs());
+    dispatch(loadMoreThenFetch());
   }, [dispatch]);
 
   if (loading && filteredSongs.length === 0 && !searchLoading) {

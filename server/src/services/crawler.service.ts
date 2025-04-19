@@ -1,7 +1,7 @@
 import axios from "axios";
 import { CheerioAPI, load } from "cheerio";
 import { ISong, ISongItem } from "../models/types";
-import { getAllSongs, addSong } from "./songs.service";
+import { addSong, hasAddedSong } from "./songs.service";
 
 export const CHORDS_URL = "https://www.tab4u.com";
 
@@ -23,15 +23,10 @@ interface CrawlerResult {
   hasMore: boolean;
 }
 
+let currPage = 0;
+
 export async function crawlPopularSongs(limit = 10): Promise<CrawlerResult> {
   try {
-    const existingSongs = getAllSongs();
-    const existingTitlesAndArtists = new Set(
-      existingSongs.map(
-        (song) => `${song.title.toLowerCase()}|${song.artist.toLowerCase()}`
-      )
-    );
-
     const url = `${CHORDS_URL}/views100.php`;
 
     const $ = await crawlPage(url);
@@ -42,10 +37,12 @@ export async function crawlPopularSongs(limit = 10): Promise<CrawlerResult> {
       if (href) songUrls.push(href);
     });
 
-    const urlsToProcess = songUrls.slice(0, 1);
+    const page = currPage * 10;
+
+    const urlsToProcess = songUrls.slice(currPage * 10, page + limit);
 
     const songPromises = urlsToProcess.map((songUrl) =>
-      getSongData(songUrl, existingTitlesAndArtists)
+      getSongData(songUrl)
         .then((songData) => {
           if (!songData) return null;
           return addSong(songData);
@@ -64,10 +61,13 @@ export async function crawlPopularSongs(limit = 10): Promise<CrawlerResult> {
           result.status === "fulfilled" && result.value !== null
       )
       .map((result) => result.value);
-
+    const hasMore = songUrls.length > urlsToProcess.length;
+    if (hasMore) {
+      currPage++;
+    }
     return {
       songs: validSongs,
-      hasMore: songUrls.length > urlsToProcess.length,
+      hasMore,
     };
   } catch (error) {
     console.error("Error crawling popular songs:", error);
@@ -75,10 +75,7 @@ export async function crawlPopularSongs(limit = 10): Promise<CrawlerResult> {
   }
 }
 
-async function getSongData(
-  songUrl: string,
-  existingTitlesAndArtists: Set<string>
-): Promise<Omit<ISong, "id"> | null> {
+async function getSongData(songUrl: string): Promise<Omit<ISong, "id"> | null> {
   try {
     const fullUrl = songUrl.startsWith("http")
       ? songUrl
@@ -99,8 +96,7 @@ async function getSongData(
       return null;
     }
 
-    const key = `${title.toLowerCase()}|${artist.toLowerCase()}`;
-    if (existingTitlesAndArtists.has(key)) {
+    if (hasAddedSong(title, artist)) {
       return null;
     }
 
@@ -313,7 +309,7 @@ function parseChordAndLyric(chordLine: string, lyricLine: string): ISongItem[] {
   }
 
   // Special case: section headers (מעבר:, סיום:, etc.)
-  if (rawLyricLine.trim().match(/^(מעבר|סיום):$/)) {
+  if (rawLyricLine.trim().match(/^(פתיחה|מעבר|סיום|Intro|Ending|Bridge):$/)) {
     const chords = getWordsWithIndices(rawChordLine);
     const arr: ISongItem[] = chords.map((chord) => ({
       lyrics: "",
@@ -332,7 +328,6 @@ function parseChordAndLyric(chordLine: string, lyricLine: string): ISongItem[] {
     return arr;
   }
 
-  // Use character-by-character alignment to preserve spaces
   return getWordWithChord(rawChordLine, rawLyricLine);
 }
 
@@ -377,7 +372,7 @@ function alignLyricsAndChords(
     while (chordIndex < chordPositions.length) {
       const chord = chordPositions[chordIndex];
 
-      const overlaps = !(chord.endIdx < startIdx || chord.startIdx > endIdx); // Overlap condition
+      const overlaps = !(chord.endIdx < startIdx || chord.startIdx > endIdx);
 
       if (overlaps) {
         matchedChord = reverseChord(chord.word);
@@ -407,25 +402,19 @@ function alignLyricsAndChords(
   return result;
 }
 
-/**
- * Matches lyrics with their corresponding chords
- * Handles both LTR (English) and RTL (Hebrew) text
- *
- * @param chordLine - The line containing chords
- * @param lyricLine - The line containing lyrics
- * @returns Array of lyrics with matched chords
- */
-export function getWordWithChord(
+function getWordWithChord(
   chordLine: string,
   lyricLine: string
 ): Array<ISongItem> {
   const isRTL = containsHebrewText(lyricLine);
+
   if (isRTL) {
+    //For rtl we need to adjust the line a bit
+    lyricLine = lyricLine.slice(1);
     chordLine = chordLine.split("").reverse().join("");
   }
 
   const chordPositions: Array<ChordSegment> = getWordsWithIndices(chordLine);
-
   const wordPositions: Array<WordSegment> = getLyricSegments(lyricLine);
 
   return alignLyricsAndChords(wordPositions, chordPositions, isRTL);

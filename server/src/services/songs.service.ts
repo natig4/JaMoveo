@@ -6,6 +6,26 @@ import { randomUUID } from "crypto";
 const songs: ISong[] = [];
 const songsFilePath = path.join(__dirname, "..", "..", "data", "songs.json");
 
+const existingTitlesAndArtists: Map<string, ISong> = new Map();
+
+export function hasAddedSong(artist: string, title: string): boolean {
+  return existingTitlesAndArtists.has(
+    `${title.toLowerCase()}|${artist.toLowerCase()}`
+  );
+}
+
+function hasSong(song: Omit<ISong, "id">): boolean {
+  return existingTitlesAndArtists.has(getSongKey(song));
+}
+
+function addSongToMap(song: ISong) {
+  existingTitlesAndArtists.set(getSongKey(song), song);
+}
+
+function getSongKey(song: Omit<ISong, "id">) {
+  return `${song.title.toLowerCase()}|${song.artist.toLowerCase()}`;
+}
+
 export async function loadSongs(): Promise<void> {
   return new Promise((resolve, reject) => {
     let data = "";
@@ -20,6 +40,9 @@ export async function loadSongs(): Promise<void> {
         const parsedSongs = JSON.parse(data);
         songs.push(...parsedSongs);
         console.log(`Loaded ${songs.length} songs from file`);
+        songs.forEach((song) => {
+          addSongToMap(song);
+        });
         resolve();
       } catch (error) {
         console.error("Error loading songs:", error);
@@ -35,7 +58,7 @@ export async function loadSongs(): Promise<void> {
 }
 
 export function getAllSongs(): ISong[] {
-  return songs;
+  return [...songs].sort(() => Math.random() - 0.5).slice(0, 10);
 }
 
 export function getSongById(id: string): ISong | undefined {
@@ -43,6 +66,9 @@ export function getSongById(id: string): ISong | undefined {
 }
 
 export async function addSong(song: Omit<ISong, "id">): Promise<ISong> {
+  if (hasSong(song)) {
+    return existingTitlesAndArtists.get(getSongKey(song))!;
+  }
   const newSong: ISong = {
     ...song,
     id: randomUUID(),

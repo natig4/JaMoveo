@@ -104,7 +104,11 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
               lineIndex === currentLineIndex && isScrolling
                 ? styles.activeLine
                 : ""
-            } ${line[0].lyrics.match(/^(מעבר|סיום):$/) ? styles.reverse : ""}
+            } ${
+              line[0].lyrics.match(/^(מעבר|סיום|Intro|Ending|Bridge):$/)
+                ? styles.reverse
+                : ""
+            }
             `}
           >
             {line.map((item, itemIndex) => (

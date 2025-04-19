@@ -39,8 +39,7 @@ export const fetchSongs = createAsyncThunk(
   "songs/fetchSongs",
   async (_, { rejectWithValue }) => {
     try {
-      const songs = await songsService.getAllSongs();
-      return [...songs].sort(() => Math.random() - 0.5);
+      return await songsService.getAllSongs();
     } catch (error) {
       return rejectWithValue(
         error instanceof Error ? error.message : "Failed to fetch songs"
@@ -68,6 +67,17 @@ export const searchSongs = createAsyncThunk(
   }
 );
 
+export const loadMoreThenFetch = createAsyncThunk(
+  "songs/loadMoreThenFetch",
+  async (_, { dispatch }) => {
+    const result = await dispatch(loadMoreSongs());
+
+    if (loadMoreSongs.fulfilled.match(result)) {
+      await dispatch(fetchSongs());
+    }
+  }
+);
+
 export const loadMoreSongs = createAsyncThunk(
   "songs/loadMoreSongs",
   async (_, { rejectWithValue, getState }) => {
@@ -81,7 +91,7 @@ export const loadMoreSongs = createAsyncThunk(
       const response = await crawlerService.fetchPopularSongs();
 
       return {
-        songs: response.songs,
+        songs: { ...state.songs, ...response.songs },
         hasMore: response.hasMore,
       };
     } catch (error) {
