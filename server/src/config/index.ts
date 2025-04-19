@@ -35,8 +35,8 @@ const production: Config = {
   port: parseInt(process.env.PORT || "8000", 10),
   nodeEnv: "production",
   dataPath: process.env.DATA_PATH || "./data",
-  clientUrl: process.env.CLIENT_URL || "https://jamoveo-8qpb.onrender.com",
-  serverUrl: process.env.SERVER_URL || "https://jamoveo-8qpb.onrender.com",
+  clientUrl: process.env.CLIENT_URL || "",
+  serverUrl: process.env.SERVER_URL || "",
   corsOrigin: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(",")
     : [
