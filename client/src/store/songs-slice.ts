@@ -69,14 +69,36 @@ export const searchSongs = createAsyncThunk(
 
 export const loadMoreThenFetch = createAsyncThunk(
   "songs/loadMoreThenFetch",
-  async (_, { dispatch }) => {
-    const result = await dispatch(loadMoreSongs());
+  async (_, { dispatch, rejectWithValue }) => {
+    try {
+      const loadMoreResult = await dispatch(loadMoreSongs());
 
-    if (loadMoreSongs.fulfilled.match(result)) {
-      await dispatch(fetchSongs());
+      if (loadMoreSongs.fulfilled.match(loadMoreResult)) {
+        const fetchResult = await dispatch(fetchSongs());
+
+        if (fetchSongs.fulfilled.match(fetchResult)) {
+          return {
+            loadMore: loadMoreResult.payload,
+            fetched: fetchResult.payload,
+          };
+        } else {
+          return rejectWithValue("fetchSongs failed");
+        }
+      } else {
+        return rejectWithValue("loadMoreSongs failed");
+      }
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Unknown error"
+      );
     }
   }
 );
+
+function getUniqueSongs(existingSongs: ISong[], songs: ISong[]): ISong[] {
+  const existingIds = new Set(existingSongs.map((song) => song.id));
+  return songs.filter((song) => !existingIds.has(song.id));
+}
 
 export const loadMoreSongs = createAsyncThunk(
   "songs/loadMoreSongs",
@@ -91,7 +113,7 @@ export const loadMoreSongs = createAsyncThunk(
       const response = await crawlerService.fetchPopularSongs();
 
       return {
-        songs: { ...state.songs, ...response.songs },
+        songs: getUniqueSongs(state.songs.songs, response.songs),
         hasMore: response.hasMore,
       };
     } catch (error) {
@@ -180,16 +202,20 @@ const songsSlice = createSlice({
     builder.addCase(loadMoreSongs.fulfilled, (state, action) => {
       const { songs, hasMore } = action.payload;
 
-      state.songs = [...state.songs, ...songs];
-
       if (!state.searchQuery) {
-        state.filteredSongs = [...state.filteredSongs, ...songs];
+        state.filteredSongs = getUniqueSongs(state.filteredSongs, songs);
       }
 
       state.loadMoreLoading = false;
       state.hasMoreSongs = !!hasMore;
     });
     builder.addCase(loadMoreSongs.rejected, (state, action) => {
+      state.loadMoreLoading = false;
+      state.loadMoreError = action.payload as string;
+      console.log("loading more songs failed");
+    });
+
+    builder.addCase(loadMoreThenFetch.rejected, (state, action) => {
       state.loadMoreLoading = false;
       state.loadMoreError = action.payload as string;
     });
