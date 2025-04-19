@@ -27,7 +27,7 @@ export default function Song({ song }: { song: ISong }) {
     <div key={song.id} className={styles.songItem}>
       <div className={styles.songThumbnail}>
         <img
-          src={song.imageUrl || "/src/assets/no-song-Image.jpg"}
+          src={song.imageUrl || "/assets/no-song-Image.jpg"}
           alt={song.title}
         />
       </div>
