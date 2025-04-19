@@ -254,88 +254,60 @@ function processChordAndLyricPairs(
 }
 
 function parseChordAndLyric(chordLine: string, lyricLine: string): ISongItem[] {
-  // Clean inputs
-  const cleanChordLine = chordLine.replace(/&nbsp;/g, " ").trim();
-  const cleanLyricLine = lyricLine.replace(/&nbsp;/g, " ").trim();
+  const cleanChordLine = chordLine.replace(/&nbsp;/g, " ").replace(/\s+/g, " ");
+  const cleanLyricLine = lyricLine.replace(/&nbsp;/g, " ").replace(/\s+/g, " ");
 
-  console.log("Clean chord line:", cleanChordLine);
-  console.log("Clean lyric line:", cleanLyricLine);
-
-  // Special case handling for completely empty lines
-  if (!cleanLyricLine && !cleanChordLine) {
+  if (!cleanChordLine && !cleanLyricLine) {
     return [];
   }
 
-  // Handle case with only chords, no lyrics
-  if (!cleanLyricLine && cleanChordLine) {
-    return cleanChordLine
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((chord) => ({
-        lyrics: "",
-        chords: chord,
-      }));
-  }
-
-  // Handle case with only lyrics, no chords
-  if (!cleanChordLine && cleanLyricLine) {
-    return cleanLyricLine
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((word) => ({
-        lyrics: word,
-        chords: "",
-      }));
-  }
-
-  // Special case for section headers like "מעבר:" or "סיום:"
+  // Special case: section headers (מעבר:, סיום:, etc.)
   if (cleanLyricLine.match(/^(מעבר|סיום):$/)) {
-    return [
-      {
-        lyrics: cleanLyricLine,
-        chords: cleanChordLine,
-      },
-    ];
+    const arr = cleanChordLine.split(" ").map((chord: string) => ({
+      lyrics: "",
+      chords: chord,
+    }));
+    arr[0].lyrics = cleanLyricLine;
+
+    return arr;
   }
 
-  // For normal lyric lines with chords in Hebrew (RTL):
-  // 1. Get all lyrics and chords as arrays
-  const lyricWords = cleanLyricLine.split(/\s+/).filter(Boolean);
-  const chordWords = cleanChordLine.split(/\s+/).filter(Boolean);
+  const lyricWords = cleanLyricLine.split(/\s+/);
+  const chordWords = cleanChordLine.split(/\s+/);
 
-  // 2. Create the result array
+  //   console.log("lyricWords", lyricWords);
+  //   console.log("cleanLyricLine", cleanLyricLine);
+  console.log("chordWords", chordWords);
+  console.log("cleanChordLine", cleanChordLine);
+  console.log("chordLine", chordLine);
+
+  // For Hebrew (RTL) text, chords and lyrics need to be matched in reverse
   const result: ISongItem[] = [];
 
-  // 3. Match chords to lyrics based on RTL order:
-  // - The first chord corresponds to the last word (rightmost in Hebrew)
-  // - The second chord corresponds to the second-to-last word
-  // - And so on...
-  for (let i = 0; i < lyricWords.length; i++) {
-    // Get the lyric word from left-to-right order (as stored in the array)
-    const lyricWord = lyricWords[i];
-
-    // Calculate the corresponding chord index based on RTL order
-    // The first chord (index 0) should match the last word (index lyricWords.length-1)
-    const chordIndex = lyricWords.length - 1 - i;
-
-    // Get the chord if available, or empty string
-    const chord =
-      chordIndex >= 0 && chordIndex < chordWords.length
-        ? chordWords[chordIndex]
-        : "";
-
+  // First create entries for all lyric words
+  for (const word of lyricWords) {
     result.push({
-      lyrics: lyricWord,
-      chords: chord,
+      lyrics: word,
+      chords: "",
     });
   }
 
-  // If there are extra chords, add them as standalone items at the beginning
+  // Then assign chords to lyrics from right to left
+  // First chord goes to rightmost word, second chord to second-rightmost word, etc.
+  for (let i = 0; i < Math.min(chordWords.length, lyricWords.length); i++) {
+    const chordIndex = i;
+    const lyricIndex = lyricWords.length - 1 - i;
+
+    result[lyricIndex].chords = chordWords[chordIndex];
+  }
+
+  // Handle extra chords (more chords than lyrics)
   if (chordWords.length > lyricWords.length) {
-    const extraChords = chordWords.slice(
-      0,
-      chordWords.length - lyricWords.length
-    );
+    const extraChords = chordWords.slice(lyricWords.length);
+    extraChords.reverse(); // Reverse to maintain correct visual order in RTL
+
+    // Add extra chord entries at the beginning
+    // This will display them on the left side in RTL layout
     for (const chord of extraChords) {
       result.unshift({
         lyrics: "",
