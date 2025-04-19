@@ -55,9 +55,9 @@
   }
 
   .quit {
-    position: absolute;
+    position: fixed;
     max-width: 10rem;
-    bottom: 2rem;
+    bottom: variables.$bottom-position;
     right: 46%;
   }
 
@@ -90,6 +90,7 @@
 
     .quit {
       right: 40%;
+      bottom: variables.$mobile-bottom-position;
     }
   }
 }

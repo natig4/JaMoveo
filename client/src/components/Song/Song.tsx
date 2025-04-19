@@ -27,7 +27,7 @@ export default function Song({ song }: { song: ISong }) {
     <div key={song.id} className={styles.songItem}>
       <div className={styles.songThumbnail}>
         <img
-          src={song.imageUrl || "/assets/no-song-Image.jpg"}
+          src={song.imageUrl || "https://www.tab4u.com/images/noArtPicDu.svg"}
           alt={song.title}
         />
       </div>

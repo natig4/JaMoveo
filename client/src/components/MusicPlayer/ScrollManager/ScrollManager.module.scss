@@ -2,19 +2,19 @@
 @use "sass:color";
 
 .controlsContainer {
-  position: absolute;
+  position: fixed;
   display: flex;
   justify-content: center;
   background-color: rgba(245, 245, 245, 0.25);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   border-radius: 0.8rem;
   padding: 1rem;
-  bottom: 1rem;
-  right: 4rem;
+  bottom: variables.$bottom-position;
+  right: variables.$side-position;
 
   &.rtl {
     right: unset;
-    left: 4rem;
+    left: variables.$side-position;
   }
 
   &:not(.rtl) {
@@ -24,10 +24,11 @@
   }
 
   @media (max-width: variables.$breakpoint-sm) {
-    right: 1rem;
+    right: variables.$mobile-side-position;
+    bottom: variables.$mobile-bottom-position;
     &.rtl {
       right: unset;
-      left: 1rem;
+      left: variables.$mobile-side-position;
     }
   }
 }
