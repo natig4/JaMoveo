@@ -5,7 +5,7 @@ import { getAllSongs, addSong } from "./songs.service";
 
 export const CHORDS_URL = "https://www.tab4u.com";
 
-let didWord = false;
+let wordCount = 0;
 
 interface CrawlerResult {
   songs: ISong[];
@@ -290,26 +290,74 @@ function parseChordAndLyric(chordLine: string, lyricLine: string): ISongItem[] {
 }
 
 function getWordWithChord(chordLine: string, lyricLine: string) {
-  const words: { word: string; chord?: string }[] = [];
+  const words: { word: string; chord?: string; isWhitespace?: boolean }[] = [];
+  chordLine = chordLine.split("").reverse().join("");
+  console.log("lyricLine", lyricLine);
 
-  lyricLine;
+  let currentStart = 0;
+  let isCurrentWhitespace = /\s/.test(lyricLine[0] || "");
 
-  const longestSeq = Math.max(lyricLine.length, chordLine.length);
-
-  let startWordIdx = 0;
-  let startChordIdx = 0;
-  for (let i = 1; i < longestSeq; i++) {
+  // Process character by character
+  for (let i = 0; i < lyricLine.length; i++) {
     const char = lyricLine[i];
-    if (char === " ") {
-      const wordEndIdx = i + 1;
-      words.push({ word: lyricLine.slice(startWordIdx, wordEndIdx) });
-      startChordIdx = wordEndIdx;
+    const isCharWhitespace = /\s/.test(char);
+
+    // If we transition between whitespace and non-whitespace (in either direction)
+    if (isCharWhitespace !== isCurrentWhitespace) {
+      // Save the previous segment (word or whitespace)
+      const segment = lyricLine.substring(currentStart, i);
+
+      words.push({
+        word: segment,
+        isWhitespace: isCurrentWhitespace,
+      });
+
+      // Start a new segment
+      currentStart = i;
+      isCurrentWhitespace = isCharWhitespace;
     }
-    i++;
   }
 
-  didWord = true;
-  console.log("words", words);
+  // Handle the last segment
+  const lastSegment = lyricLine.substring(currentStart);
+  if (lastSegment) {
+    words.push({
+      word: lastSegment,
+      isWhitespace: isCurrentWhitespace,
+    });
+  }
+
+  // Filter the results
+  const filteredWords = words.filter((item, index) => {
+    // Keep all non-whitespace words
+    if (!item.isWhitespace) {
+      return true;
+    }
+
+    // For whitespace:
+    // 1. Skip leading whitespace (index 0)
+    if (index === 0) {
+      return false;
+    }
+
+    // 2. Skip trailing whitespace (last item)
+    if (index === words.length - 1) {
+      return false;
+    }
+
+    // 3. Keep middle whitespace only if it's more than 1 character
+    return item.word.length > 1;
+  });
+
+  // Remove the isWhitespace flag from the result
+  const result = filteredWords.map(({ word, chord }) => ({
+    word,
+    ...(chord && { chord }),
+  }));
+
+  wordCount++;
+  console.log("words", result);
+  return result;
 }
 
 function alignChordsWithLyrics(
@@ -323,7 +371,7 @@ function alignChordsWithLyrics(
   const lyricWords: { word: string; startPos: number }[] = [];
   const lyricWordPattern = /\S+/g;
   let match;
-  if (!didWord) {
+  if (wordCount < 4) {
     getWordWithChord(chordLine, lyricLine);
   }
 
