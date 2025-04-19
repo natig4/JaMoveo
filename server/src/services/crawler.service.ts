@@ -54,7 +54,7 @@ export async function crawlPopularSongs(limit = 10): Promise<CrawlerResult> {
 
     return {
       songs: validSongs,
-      hasMore: songUrls.length > limit,
+      hasMore: songUrls.length > urlsToProcess.length,
     };
   } catch (error) {
     console.error("Error crawling popular songs:", error);
@@ -135,21 +135,27 @@ function extractSongData(songPage: CheerioAPI): ISong["data"] {
   try {
     const songTables = songPage(
       'table[border="0"][cellspacing="0"][cellpadding="0"]'
-    );
+    ).not(".br");
 
     songTables.each(function () {
       const $table = songPage(this);
-      const rows = $table.find("tr");
 
+      // Skip hidden tables
+      if (
+        $table.attr("style")?.includes("display: none") ||
+        $table.attr("style")?.includes("display:none")
+      ) {
+        return;
+      }
+
+      const rows = $table.find("tr");
       const processedRows: Array<{ type: "chord" | "lyric"; content: string }> =
         [];
 
       rows.each((_i, rowEl) => {
         const $row = songPage(rowEl);
 
-        // Skip rows with class "br" or display:none style
         if (
-          $row.hasClass("br") ||
           $row.attr("style")?.includes("display: none") ||
           $row.attr("style")?.includes("display:none")
         ) {
@@ -158,10 +164,8 @@ function extractSongData(songPage: CheerioAPI): ISong["data"] {
 
         const cells = $row.find("td");
 
-        // Skip empty rows
         if (!cells.length || !cells.text().trim()) return;
 
-        // Also skip cells with display:none
         if (
           cells.attr("style")?.includes("display: none") ||
           cells.attr("style")?.includes("display:none")
@@ -175,6 +179,7 @@ function extractSongData(songPage: CheerioAPI): ISong["data"] {
         if (
           cells.hasClass("chords") ||
           cells.find(".chords").length ||
+          cells.attr("class")?.includes("chords") ||
           content.split(/\s+/).some(isChordText)
         ) {
           rowType = "chord";
@@ -191,7 +196,7 @@ function extractSongData(songPage: CheerioAPI): ISong["data"] {
         }
       });
 
-      processSongRows(processedRows, songData);
+      processChordAndLyricPairs(processedRows, songData);
     });
   } catch (error) {
     console.error("Error extracting song data:", error);
@@ -224,42 +229,44 @@ async function crawlPage(url: string): Promise<CheerioAPI> {
   }
 }
 
-function processSongRows(
+function processChordAndLyricPairs(
   processedRows: Array<{ type: "chord" | "lyric"; content: string }>,
   songData: ISong["data"]
 ) {
-  for (let i = 0; i < processedRows.length - 1; i++) {
-    if (
-      processedRows[i].type === "chord" &&
-      processedRows[i + 1].type === "lyric"
-    ) {
-      // Standard case: chord followed by lyric
-      songData.push([
-        {
-          lyrics: processedRows[i + 1].content,
-          chords: processedRows[i].content,
-        },
-      ]);
-      i++;
-    } else if (
-      processedRows[i].type === "lyric" &&
-      processedRows[i + 1].type === "chord"
-    ) {
-      // Reversed case: lyric followed by chord
-      songData.push([
-        {
-          lyrics: processedRows[i].content,
-          chords: processedRows[i + 1].content,
-        },
-      ]);
+  for (let i = 0; i < processedRows.length; i++) {
+    const current = processedRows[i];
+    const next = i + 1 < processedRows.length ? processedRows[i + 1] : null;
 
+    if (current.type === "chord" && next && next.type === "lyric") {
+      const line = parseChordAndLyric(current.content, next.content);
+      if (line.length > 0) {
+        songData.push(line);
+      }
+      i++;
+    } else if (current.type === "lyric" && next && next.type === "chord") {
+      const line = parseChordAndLyric(next.content, current.content);
+      if (line.length > 0) {
+        songData.push(line);
+      }
       i++;
     }
   }
 }
 
+function parseChordAndLyric(chordLine: string, lyricLine: string): ISongItem[] {
+  console.log("parseChordAndLyric chordLine", chordLine);
+  console.log("parseChordAndLyric lyricLine", lyricLine);
+
+  const chords = chordLine.split("&nbsp").reverse();
+  const lyrics = lyricLine.split("&nbsp");
+  return lyrics.map((lyric, i) => ({
+    lyrics: lyric || "",
+    chords: chords[i] || "",
+  }));
+}
+
 function isChordText(text: string): boolean {
-  return /^[A-G][#b]?(m|maj|dim|aug|sus|add)?[0-9]*(\/[A-G][#b]?)?$/.test(
+  return /^[A-Ga-g][#b]?(m|M|maj|min|dim|aug|sus|add)?[0-9]*(\/[A-Ga-g][#b]?)?$/.test(
     text.trim()
   );
 }
