@@ -6,7 +6,8 @@ import {
   registerAdminUser,
   clearError,
 } from "../store/auth-slice";
-import AuthForm from "./AuthForm/AuthForm";
+import LoginSignupForm from "./AuthForm/LoginSignupForm";
+import AuthFormShell from "./AuthFormShell/AuthFormShell";
 
 function SignupPage({ isAdmin }: { isAdmin: boolean }) {
   const { loading, error, isAuthenticated, user } = useAppSelector(
@@ -57,12 +58,14 @@ function SignupPage({ isAdmin }: { isAdmin: boolean }) {
   };
 
   return (
-    <AuthForm
-      formType={isAdmin ? "signup-admin" : "signup"}
-      onSubmit={handleSubmit}
-      isLoading={loading}
-      error={error}
-    />
+    <AuthFormShell title={`${isAdmin ? "Admin " : ""}Register`}>
+      <LoginSignupForm
+        formType={isAdmin ? "signup-admin" : "signup"}
+        onSubmit={handleSubmit}
+        isLoading={loading}
+        error={error}
+      />
+    </AuthFormShell>
   );
 }
 

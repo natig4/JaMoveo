@@ -22,7 +22,7 @@ function GoogleSignInButton({
       className={`${styles.googleButton} ${className}`}
     >
       <FcGoogle className={styles.googleIcon} />
-      <span>{isRegister ? "register" : "Sign in"} with Google</span>
+      <span>{isRegister ? "Register" : "Sign in"} with Google</span>
     </button>
   );
 }

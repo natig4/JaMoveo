@@ -7,10 +7,19 @@ import Player from "./pages/Player/Player";
 import Signin from "./pages/Signin";
 import SignupAdmin from "./pages/SignupAdmin";
 import User from "./pages/User/User";
+import ForgotPassword from "./pages/ForgotPassword";
 
 function SiteRoutes() {
   return (
     <Routes>
+      <Route
+        path='/forgot-password'
+        element={
+          <AuthRedirect>
+            <ForgotPassword />
+          </AuthRedirect>
+        }
+      />
       <Route
         path='/signup-admin'
         element={

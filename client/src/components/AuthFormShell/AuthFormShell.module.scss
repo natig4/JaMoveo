@@ -1,0 +1,90 @@
+@use "../../style/variables";
+
+.container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 1;
+}
+
+.content {
+  flex: 1;
+  align-self: baseline;
+  padding: 8rem 4rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  justify-self: center;
+  min-width: 60%;
+
+  .logo {
+    display: none;
+    font-size: 5rem;
+    font-weight: 600;
+    color: black;
+    padding: 4rem 0;
+  }
+}
+
+.logo {
+  font-size: 5rem;
+}
+
+.image {
+  position: relative;
+  background-image: url("/src/assets/register.png");
+  background-size: cover;
+  background-position: center;
+  border-top-left-radius: 1.2rem;
+  border-bottom-left-radius: 1.2rem;
+
+  &.login {
+    background-image: url("/src/assets/login.png");
+  }
+  .logo {
+    position: absolute;
+    font-weight: 400;
+    color: white;
+    bottom: 0;
+    right: 2.4rem;
+    padding: 0;
+  }
+}
+
+.header {
+  margin-bottom: 2rem;
+  text-align: left;
+
+  h2 {
+    color: variables.$grey;
+    font-weight: 400;
+    font-size: 2.4rem;
+  }
+
+  h1 {
+    font-size: 5.6rem;
+    color: variables.$brown;
+    font-weight: 600;
+  }
+}
+
+@media (max-width: variables.$breakpoint-lg) {
+  .content {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: variables.$breakpoint-sm) {
+  .container {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .content {
+    justify-content: flex-start;
+    padding: 2rem;
+  }
+
+  .image {
+    display: none;
+  }
+}
