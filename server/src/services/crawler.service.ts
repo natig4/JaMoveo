@@ -174,7 +174,7 @@ function extractSongData(songPage: CheerioAPI): ISong["data"] {
         }
 
         let rowType: "chord" | "lyric" | null = null;
-        const content = cells.text().trim();
+        const content = cells.text();
 
         if (
           cells.hasClass("chords") ||
@@ -275,9 +275,9 @@ function parseChordAndLyric(chordLine: string, lyricLine: string): ISongItem[] {
   const lyricWords = cleanLyricLine.split(/\s+/);
   const chordWords = cleanChordLine.split(/\s+/);
 
-  //   console.log("lyricWords", lyricWords);
-  //   console.log("cleanLyricLine", cleanLyricLine);
-  console.log("chordWords", chordWords);
+  console.log("lyricLine", lyricLine);
+  console.log("cleanLyricLine", cleanLyricLine);
+  //   console.log("chordWords", chordWords);
   console.log("cleanChordLine", cleanChordLine);
   console.log("chordLine", chordLine);
 
