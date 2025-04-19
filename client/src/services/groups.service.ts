@@ -46,7 +46,7 @@ export async function createNewGroup(
 ): Promise<{ group: IGroup; user: IUser }> {
   const response = await fetch(
     `${API_URL}/groups/create-and-promote`,
-    getConfig(JSON.stringify({ name }))
+    getConfig({ name })
   );
 
   const data = (await response.json()) as ApiResponse;
