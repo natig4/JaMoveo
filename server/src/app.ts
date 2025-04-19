@@ -11,6 +11,7 @@ import { songsRouter } from "./routes/songs.router";
 import { usersRouter } from "./routes/users.router";
 import { groupsRouter } from "./routes/groups.router";
 import { crawlerRouter } from "./routes/crawler.router";
+import { CHORDS_URL } from "./services/crawler.service";
 
 const app = express();
 
@@ -20,13 +21,12 @@ if (config.nodeEnv === "production") {
     helmet({
       contentSecurityPolicy: {
         directives: {
-          // Your existing directives
           "img-src": [
             "'self'",
             "data:",
             "https://lh3.googleusercontent.com",
             "https://*.googleusercontent.com",
-            "https://www.tab4u.com",
+            CHORDS_URL,
           ],
         },
       },

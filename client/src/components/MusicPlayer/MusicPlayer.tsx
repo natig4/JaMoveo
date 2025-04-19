@@ -85,7 +85,11 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
     <div
       className={`${styles.playerContainer} ${isHebrew ? styles.rtlText : ""}`}
     >
-      <div className={styles.header}>
+      <div
+        className={`${styles.header} ${
+          isHebrewText(song.title) ? styles.rtl : ""
+        }`}
+      >
         <h1>{song.title}</h1>
         <h2>{song.artist}</h2>
       </div>

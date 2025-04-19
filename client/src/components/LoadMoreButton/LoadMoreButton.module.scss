@@ -23,7 +23,7 @@
   cursor: pointer;
   transition: background-color 0.2s, transform 0.1s;
   width: 100%;
-  max-width: 30rem;
+  max-width: 20rem;
 
   &:hover:not(:disabled) {
     background-color: color.adjust(variables.$yellow, $lightness: 10%);
@@ -98,7 +98,6 @@
   }
 
   .loadMoreButton {
-    font-size: 1.4rem;
     padding: 0.8rem 1.6rem;
   }
 }
