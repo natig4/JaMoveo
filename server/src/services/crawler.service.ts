@@ -22,7 +22,6 @@ export async function crawlPopularSongs(limit = 10): Promise<CrawlerResult> {
     const url = `${CHORDS_URL}/views100.php`;
 
     const $ = await crawlPage(url);
-    const songs: ISong[] = [];
 
     const songUrls: string[] = [];
     $("td.songTd1 a.ruSongLink.songLinkT").each(function () {
@@ -32,33 +31,30 @@ export async function crawlPopularSongs(limit = 10): Promise<CrawlerResult> {
 
     const urlsToProcess = songUrls.slice(0, 1);
 
-    const songPromises = urlsToProcess.map(async (songUrl) => {
-      try {
-        const newSong = await getSongData(songUrl, existingTitlesAndArtists);
-        console.log("newSong", newSong);
+    const songPromises = urlsToProcess.map((songUrl) =>
+      getSongData(songUrl, existingTitlesAndArtists)
+        .then((songData) => {
+          if (!songData) return null;
+          return addSong(songData);
+        })
+        .catch((error) => {
+          console.error(`Error processing song URL ${songUrl}:`, error);
+          return null;
+        })
+    );
 
-        if (newSong) {
-          const song = await addSong(newSong);
-          return song;
-        }
-      } catch (error) {
-        console.error(`Error processing song URL ${songUrl}:`, error);
-        return null;
-      }
-    });
+    const fetchedResults = await Promise.allSettled(songPromises);
 
-    const fetchedSongs = await Promise.allSettled(songPromises);
-
-    const validSongs = fetchedSongs.filter(
-      (song) => song
-    ) as unknown as ISong[];
-    songs.push(...validSongs);
-
-    const hasMore = songUrls.length > limit;
+    const validSongs = fetchedResults
+      .filter(
+        (result): result is PromiseFulfilledResult<ISong> =>
+          result.status === "fulfilled" && result.value !== null
+      )
+      .map((result) => result.value);
 
     return {
       songs: validSongs,
-      hasMore,
+      hasMore: songUrls.length > limit,
     };
   } catch (error) {
     console.error("Error crawling popular songs:", error);
@@ -97,10 +93,14 @@ async function getSongData(
 
     const songData = extractSongData(songPage);
 
+    if (songData.length === 0) {
+      return null;
+    }
+
     const newSong: Omit<ISong, "id"> = {
       title,
       artist,
-      imageUrl: `${CHORDS_URL}${imageUrl.replace(/"/g, "")}`, // Clean up the URL by removing quotes
+      imageUrl: imageUrl ? `${CHORDS_URL}${imageUrl.replace(/"/g, "")}` : "",
       data: songData,
     };
 
@@ -111,7 +111,10 @@ async function getSongData(
   }
 }
 
-function getTitleAndArtist(headerText: string) {
+function getTitleAndArtist(headerText: string): {
+  title: string;
+  artist: string;
+} {
   let title = "";
   let artist = "";
 
@@ -136,18 +139,19 @@ function extractSongData(songPage: CheerioAPI): ISong["data"] {
 
     songTables.each(function () {
       const $table = songPage(this);
-
       const rows = $table.find("tr");
 
       for (let i = 0; i < rows.length; i += 2) {
+        if (i + 1 >= rows.length) break; // Ensure we have pairs
+
         const chordRow = songPage(rows[i]);
         const lyricRow = songPage(rows[i + 1]);
-        console.log("new row", i);
 
         const chordCells = chordRow.find("td.chords");
         const lyricCells = lyricRow.find("td.song");
 
-        // Check if this is a chord-lyric pair
+        if (chordCells.length === 0 || lyricCells.length === 0) continue;
+
         const firstChordCell = chordCells.first();
         const firstLyricCell = lyricCells.first();
 
@@ -157,34 +161,28 @@ function extractSongData(songPage: CheerioAPI): ISong["data"] {
             .text()
             .trim()
             .match(/^[A-G][#b]?m?7?$/);
+
         const isLyricRow =
           firstLyricCell.hasClass("song") ||
           (!isChordRow && firstLyricCell.text().trim().length > 0);
 
-        //   console.log("chordRow", chordRow);
-        //   console.log("lyricRow", lyricRow);
+        if (!isChordRow && !isLyricRow) continue;
 
-        if (isChordRow && isLyricRow) {
-          // Create a new line for the song data
-          const line: Array<{ lyrics: string; chords?: string }> = [];
+        const line: Array<{ lyrics: string; chords?: string }> = [];
 
-          // Get the text from the lyric row
-          const lyricText = lyricRow.text();
+        const lyricText = lyricRow.text().trim();
+        if (!lyricText) continue;
 
-          // Get the chord from the chord row
-          const chordText = chordRow.text();
+        const chordText = chordRow.text().trim();
 
-          line.push({
-            lyrics: lyricText,
-            chords: chordText || undefined,
-          });
+        line.push({
+          lyrics: lyricText,
+          chords: chordText || undefined,
+        });
 
-          songData.push(line);
-        }
+        songData.push(line);
       }
     });
-
-    // console.log("foundSongData", songData);
   } catch (error) {
     console.error("Error extracting song data:", error);
   }
@@ -192,23 +190,26 @@ function extractSongData(songPage: CheerioAPI): ISong["data"] {
   return songData;
 }
 
-async function crawlPage(url: string) {
-  console.log(`Crawling ${url}`);
+async function crawlPage(url: string): Promise<CheerioAPI> {
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.5",
+      },
+      timeout: 15000,
+    });
 
-  const response = await axios.get(url, {
-    headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-      Accept:
-        "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-      "Accept-Language": "en-US,en;q=0.5",
-    },
-    timeout: 10000,
-  });
+    if (response.status !== 200) {
+      throw new Error(`Failed to fetch page: ${response.status}`);
+    }
 
-  if (response.status !== 200) {
-    throw new Error(`Failed to fetch page: ${response.status}`);
+    return load(response.data);
+  } catch (error) {
+    console.error(`Error crawling page ${url}:`, error);
+    throw error;
   }
-
-  return load(response.data);
 }
