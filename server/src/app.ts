@@ -15,7 +15,21 @@ const app = express();
 
 if (config.nodeEnv === "production") {
   app.set("trust proxy", 1);
-  app.use(helmet());
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          // Your existing directives
+          "img-src": [
+            "'self'",
+            "data:",
+            "https://lh3.googleusercontent.com",
+            "https://*.googleusercontent.com",
+          ],
+        },
+      },
+    })
+  );
 } else {
   app.use(
     helmet({
