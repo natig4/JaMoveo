@@ -39,7 +39,10 @@ const production: Config = {
   serverUrl: process.env.SERVER_URL || "https://jamoveo-8qpb.onrender.com",
   corsOrigin: process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(",")
-    : ["https://jamoveo-8qpb.onrender.com"],
+    : [
+        "https://jamoveo-8qpb.onrender.com",
+        "https://jamoveo-production-13d0.up.railway.app",
+      ],
   sessionSecret: process.env.SESSION_SECRET || "replace-with-secure-secret-1",
   sessionSecret2: process.env.SESSION_SECRET2 || "replace-with-secure-secret-2",
   googleClientId: process.env.GOOGLE_CLIENT_ID || "",
