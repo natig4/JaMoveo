@@ -5,7 +5,18 @@ import { getAllSongs, addSong } from "./songs.service";
 
 export const CHORDS_URL = "https://www.tab4u.com";
 
-let wordCount = 0;
+interface WordSegment {
+  word: string;
+  startIdx: number;
+  endIdx: number;
+  isWhitespace: boolean;
+}
+
+interface ChordSegment {
+  word: string;
+  startIdx: number;
+  endIdx: number;
+}
 
 interface CrawlerResult {
   songs: ISong[];
@@ -230,6 +241,45 @@ async function crawlPage(url: string): Promise<CheerioAPI> {
   }
 }
 
+function getLyricSegments(
+  input: string
+): { word: string; startIdx: number; endIdx: number; isWhitespace: boolean }[] {
+  const result = [];
+  let start = null;
+  let isWhitespace = false;
+
+  for (let i = 0; i <= input.length; i++) {
+    const char = input[i];
+    const isCharWhitespace = /\s/.test(char);
+
+    if (start === null && char !== undefined) {
+      start = i;
+      isWhitespace = isCharWhitespace;
+    }
+
+    const nextIsDifferent =
+      i === input.length || isCharWhitespace !== isWhitespace;
+
+    if (start !== null && nextIsDifferent) {
+      const segment = input.slice(start, i);
+
+      if (!isWhitespace || segment.length > 1) {
+        result.push({
+          word: segment,
+          startIdx: start,
+          endIdx: i - 1,
+          isWhitespace,
+        });
+      }
+
+      start = i;
+      isWhitespace = isCharWhitespace;
+    }
+  }
+
+  return result;
+}
+
 function processChordAndLyricPairs(
   processedRows: Array<{ type: "chord" | "lyric"; content: string }>,
   songData: ISong["data"]
@@ -264,10 +314,10 @@ function parseChordAndLyric(chordLine: string, lyricLine: string): ISongItem[] {
 
   // Special case: section headers (מעבר:, סיום:, etc.)
   if (rawLyricLine.trim().match(/^(מעבר|סיום):$/)) {
-    const chords = extractChords(rawChordLine);
+    const chords = getWordsWithIndices(rawChordLine);
     const arr: ISongItem[] = chords.map((chord) => ({
       lyrics: "",
-      chords: chord.trim(),
+      chords: chord.word.trim(),
     }));
 
     if (arr.length > 0) {
@@ -282,189 +332,103 @@ function parseChordAndLyric(chordLine: string, lyricLine: string): ISongItem[] {
     return arr;
   }
 
-  // For Hebrew (RTL) text, we need to be careful about the alignment
-  const isHebrew = containsHebrewText(rawLyricLine);
-
   // Use character-by-character alignment to preserve spaces
-  return alignChordsWithLyrics(rawChordLine, rawLyricLine, isHebrew);
+  return getWordWithChord(rawChordLine, rawLyricLine);
 }
 
-function getWordWithChord(chordLine: string, lyricLine: string) {
-  const words: { word: string; chord?: string; isWhitespace?: boolean }[] = [];
-  chordLine = chordLine.split("").reverse().join("");
-  console.log("lyricLine", lyricLine);
+function getWordsWithIndices(
+  input: string
+): { word: string; startIdx: number; endIdx: number }[] {
+  const result = [];
+  let start = null;
 
-  let currentStart = 0;
-  let isCurrentWhitespace = /\s/.test(lyricLine[0] || "");
+  for (let i = 0; i <= input.length; i++) {
+    const char = input[i];
 
-  // Process character by character
-  for (let i = 0; i < lyricLine.length; i++) {
-    const char = lyricLine[i];
-    const isCharWhitespace = /\s/.test(char);
+    if (start === null && char && !/\s/.test(char)) {
+      start = i;
+    }
 
-    // If we transition between whitespace and non-whitespace (in either direction)
-    if (isCharWhitespace !== isCurrentWhitespace) {
-      // Save the previous segment (word or whitespace)
-      const segment = lyricLine.substring(currentStart, i);
-
-      words.push({
-        word: segment,
-        isWhitespace: isCurrentWhitespace,
-      });
-
-      // Start a new segment
-      currentStart = i;
-      isCurrentWhitespace = isCharWhitespace;
+    if (start !== null && (i === input.length || /\s/.test(char))) {
+      const word = input.slice(start, i);
+      result.push({ word, startIdx: start, endIdx: i - 1 });
+      start = null;
     }
   }
 
-  // Handle the last segment
-  const lastSegment = lyricLine.substring(currentStart);
-  if (lastSegment) {
-    words.push({
-      word: lastSegment,
-      isWhitespace: isCurrentWhitespace,
-    });
-  }
-
-  // Filter the results
-  const filteredWords = words.filter((item, index) => {
-    // Keep all non-whitespace words
-    if (!item.isWhitespace) {
-      return true;
-    }
-
-    // For whitespace:
-    // 1. Skip leading whitespace (index 0)
-    if (index === 0) {
-      return false;
-    }
-
-    // 2. Skip trailing whitespace (last item)
-    if (index === words.length - 1) {
-      return false;
-    }
-
-    // 3. Keep middle whitespace only if it's more than 1 character
-    return item.word.length > 1;
-  });
-
-  // Remove the isWhitespace flag from the result
-  const result = filteredWords.map(({ word, chord }) => ({
-    word,
-    ...(chord && { chord }),
-  }));
-
-  wordCount++;
-  console.log("words", result);
   return result;
 }
 
-function alignChordsWithLyrics(
-  chordLine: string,
-  lyricLine: string,
-  isRTL: boolean
-): ISongItem[] {
-  const result: ISongItem[] = [];
+function alignLyricsAndChords(
+  wordPositions: WordSegment[],
+  chordPositions: ChordSegment[],
+  isRTL: boolean = false
+): Array<ISongItem> {
+  const result: Array<ISongItem> = [];
+  let chordIndex = 0;
 
-  // First identify words and their positions in the lyric line
-  const lyricWords: { word: string; startPos: number }[] = [];
-  const lyricWordPattern = /\S+/g;
-  let match;
-  if (wordCount < 4) {
-    getWordWithChord(chordLine, lyricLine);
-  }
+  const reverseChord = (chord: string) =>
+    isRTL ? chord.split("").reverse().join("") : chord;
 
-  while ((match = lyricWordPattern.exec(lyricLine)) !== null) {
-    lyricWords.push({
-      word: match[0],
-      startPos: match.index,
-    });
-  }
+  for (const word of wordPositions) {
+    const { startIdx, endIdx, word: lyrics, isWhitespace } = word;
+    let matchedChord: string | undefined;
 
-  // If no lyric words, create a single item with empty lyrics
-  if (lyricWords.length === 0) {
-    // Just extract chords
-    const chords = extractChords(chordLine);
-    return chords.map((chord) => ({
-      lyrics: "",
-      chords: chord.trim(),
-    }));
-  }
+    while (chordIndex < chordPositions.length) {
+      const chord = chordPositions[chordIndex];
 
-  // Identify chords and their positions
-  const chordPositions: { chord: string; startPos: number }[] = [];
-  const chordPattern =
-    /[A-Ga-g][#b]?(m|M|maj|min|dim|aug|sus|add)?[0-9]*(\/[A-Ga-g][#b]?)?/g;
+      const overlaps = !(chord.endIdx < startIdx || chord.startIdx > endIdx); // Overlap condition
 
-  while ((match = chordPattern.exec(chordLine)) !== null) {
-    chordPositions.push({
-      chord: match[0],
-      startPos: match.index,
-    });
-  }
-
-  // Create song items for each lyric word
-  for (const lyricWord of lyricWords) {
-    const item: ISongItem = {
-      lyrics: lyricWord.word,
-      chords: "",
-    };
-
-    // Find chord that aligns with this word
-    for (const chordPos of chordPositions) {
-      // For RTL languages like Hebrew, check if chord is close to the lyric word
-      // This is a simplified approach and may need adjustment based on your exact requirements
-      if (isRTL) {
-        // In RTL, we'll consider a chord aligned if it's close to the word's position
-        // This is approximate and may need fine-tuning
-        if (Math.abs(chordPos.startPos - lyricWord.startPos) < 3) {
-          item.chords = chordPos.chord;
-          break;
-        }
+      if (overlaps) {
+        matchedChord = reverseChord(chord.word);
+        chordIndex++;
+        break;
+      } else if (chord.endIdx < startIdx) {
+        result.push({ lyrics: "", chords: reverseChord(chord.word) });
+        chordIndex++;
       } else {
-        // For LTR languages, chord belongs to the word if it starts at or just before the word
-        if (
-          chordPos.startPos <= lyricWord.startPos &&
-          (chordPos.startPos + chordPos.chord.length > lyricWord.startPos ||
-            chordPos.startPos + chordPos.chord.length + 1 ===
-              lyricWord.startPos)
-        ) {
-          item.chords = chordPos.chord;
-          break;
-        }
-      }
-    }
-
-    result.push(item);
-  }
-
-  // Add any remaining chords that don't align with lyrics
-  for (const chordPos of chordPositions) {
-    let isAligned = false;
-
-    for (const item of result) {
-      if (item.chords === chordPos.chord) {
-        isAligned = true;
         break;
       }
     }
 
-    if (!isAligned) {
-      result.push({
-        lyrics: "",
-        chords: chordPos.chord,
-      });
+    if (!isWhitespace || matchedChord) {
+      result.push({ lyrics, chords: matchedChord });
     }
+  }
+
+  while (chordIndex < chordPositions.length) {
+    result.push({
+      lyrics: "",
+      chords: reverseChord(chordPositions[chordIndex].word),
+    });
+    chordIndex++;
   }
 
   return result;
 }
 
-function extractChords(line: string): string[] {
-  const chordPattern =
-    /[A-Ga-g][#b]?(m|M|maj|min|dim|aug|sus|add)?[0-9]*(\/[A-Ga-g][#b]?)?/g;
-  return line.match(chordPattern) || [];
+/**
+ * Matches lyrics with their corresponding chords
+ * Handles both LTR (English) and RTL (Hebrew) text
+ *
+ * @param chordLine - The line containing chords
+ * @param lyricLine - The line containing lyrics
+ * @returns Array of lyrics with matched chords
+ */
+export function getWordWithChord(
+  chordLine: string,
+  lyricLine: string
+): Array<ISongItem> {
+  const isRTL = containsHebrewText(lyricLine);
+  if (isRTL) {
+    chordLine = chordLine.split("").reverse().join("");
+  }
+
+  const chordPositions: Array<ChordSegment> = getWordsWithIndices(chordLine);
+
+  const wordPositions: Array<WordSegment> = getLyricSegments(lyricLine);
+
+  return alignLyricsAndChords(wordPositions, chordPositions, isRTL);
 }
 
 function containsHebrewText(text: string): boolean {
