@@ -96,6 +96,11 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  console.log(`${new Date().toISOString()} | ${req.method} ${req.url}`);
+  next();
+});
+
 app.use("/users", usersRouter);
 app.use("/auth", authRouter);
 app.use("/song", songsRouter);
