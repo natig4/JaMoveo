@@ -1,0 +1,156 @@
+@use "../../style/variables";
+
+.tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 2rem;
+}
+
+.tab {
+  padding: 1rem 1.5rem;
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: variables.$grey;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+
+  &.activeTab {
+    color: variables.$brown;
+    border-bottom: 2px solid variables.$yellow;
+  }
+
+  &:hover:not(.activeTab) {
+    color: variables.$brown;
+    border-bottom: 2px solid rgba(variables.$yellow, 0.5);
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.errorMessage {
+  color: variables.$error-color;
+  font-size: 1.6rem;
+  padding: 0.5rem 0;
+  animation: fadeIn 0.3s ease;
+}
+
+.successMessage {
+  color: #38a169;
+  font-size: 1.6rem;
+  font-weight: 500;
+  padding: 0.5rem 0;
+  animation: fadeIn 0.3s ease;
+}
+
+.loadingMessage {
+  color: variables.$grey;
+  font-size: 1.4rem;
+  font-style: italic;
+  padding: 0.5rem 0;
+}
+
+.submitButton {
+  margin-top: 1.5rem;
+  transition: transform 0.1s ease;
+
+  &:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+}
+
+.backButton {
+  margin-top: 2rem;
+  background: none;
+  border: none;
+  color: variables.$grey;
+  font-size: 1.4rem;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 0.5rem;
+  align-self: center;
+
+  &:hover:not(:disabled) {
+    color: variables.$brown;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.currentGroup {
+  color: variables.$grey;
+  font-size: 1.5rem;
+  margin-top: -0.5rem;
+  padding: 0.5rem 0;
+
+  strong {
+    color: variables.$brown;
+    font-weight: 600;
+  }
+}
+
+.infoBox {
+  background-color: #f9f9f5;
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  border-left: 3px solid variables.$yellow;
+  margin-bottom: 1rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  text-align: left;
+
+  p {
+    font-size: 1.5rem;
+    font-weight: 500;
+    color: variables.$brown;
+    margin-bottom: 0.8rem;
+  }
+
+  ul {
+    padding-left: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: baseline;
+
+    li {
+      font-size: 1.4rem;
+      color: variables.$grey;
+      list-style-type: disc;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: variables.$breakpoint-sm) {
+  .tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.2rem;
+  }
+
+  .tab {
+    padding: 0.8rem 0.5rem;
+    font-size: 1.5rem;
+  }
+}
