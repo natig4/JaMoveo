@@ -1,6 +1,10 @@
 import { useCallback, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
-import { fetchSongs, loadMoreThenFetch } from "../../store/songs-slice";
+import {
+  fetchSongs,
+  loadMoreThenFetch,
+  clearSongsErrors,
+} from "../../store/songs-slice";
 import SearchSongs from "../SearchSongs/SearchSongs";
 import styles from "./AdminPlayer.module.scss";
 import Song from "../Song/Song";
@@ -17,11 +21,16 @@ export default function AdminPlayer() {
     loadMoreError,
     searchQuery,
     hasMoreSongs,
+    initialFetchDone,
   } = useAppSelector((state) => state.songs);
 
   useEffect(() => {
-    dispatch(fetchSongs());
-  }, [dispatch]);
+    dispatch(clearSongsErrors());
+
+    if (!initialFetchDone && !loading) {
+      dispatch(fetchSongs());
+    }
+  }, [dispatch, initialFetchDone, loading]);
 
   const handleLoadMore = useCallback(() => {
     dispatch(loadMoreThenFetch());

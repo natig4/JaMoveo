@@ -13,6 +13,7 @@ interface SongsState {
   loadMoreError: string | null;
   searchQuery: string;
   hasMoreSongs: boolean;
+  initialFetchDone: boolean;
   scrollSettings: {
     interval: number;
     isScrolling: boolean;
@@ -29,6 +30,7 @@ const initialState: SongsState = {
   loadMoreError: null,
   searchQuery: "",
   hasMoreSongs: true,
+  initialFetchDone: false,
   scrollSettings: {
     interval: 2,
     isScrolling: false,
@@ -155,6 +157,8 @@ const songsSlice = createSlice({
   reducers: {
     setSearchQuery(state, action: PayloadAction<string>) {
       state.searchQuery = action.payload;
+      state.error = null;
+      state.loadMoreError = null;
     },
     setScrollInterval(state, action: PayloadAction<number>) {
       state.scrollSettings.interval = action.payload;
@@ -164,6 +168,10 @@ const songsSlice = createSlice({
     },
     stopScrolling(state) {
       state.scrollSettings.isScrolling = false;
+    },
+    clearSongsErrors(state) {
+      state.error = null;
+      state.loadMoreError = null;
     },
     cleanState(state) {
       state.songs = [];
@@ -175,6 +183,7 @@ const songsSlice = createSlice({
       state.loadMoreError = null;
       state.searchQuery = "";
       state.hasMoreSongs = true;
+      state.initialFetchDone = false;
       state.scrollSettings = {
         interval: 2,
         isScrolling: false,
@@ -194,6 +203,7 @@ const songsSlice = createSlice({
         state.filteredSongs = action.payload;
         state.loading = false;
         state.error = null;
+        state.initialFetchDone = true;
       }
     );
     builder.addCase(fetchSongs.rejected, (state, action) => {
@@ -238,6 +248,7 @@ const songsSlice = createSlice({
     builder.addCase(loadMoreSongs.rejected, (state, action) => {
       state.loadMoreLoading = false;
       state.loadMoreError = action.payload as string;
+      console.error("Loading more songs failed:", action.payload);
     });
 
     builder.addCase(loadMoreThenFetch.pending, (state) => {
@@ -286,5 +297,6 @@ export const {
   toggleScrolling,
   stopScrolling,
   cleanState,
+  clearSongsErrors,
 } = songsSlice.actions;
 export default songsSlice.reducer;
