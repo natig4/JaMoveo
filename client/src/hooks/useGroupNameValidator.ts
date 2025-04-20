@@ -52,6 +52,13 @@ export function useGroupNameValidator(
     }
   }, [enteredValue, isAdmin]);
 
+  const setValue = useCallback((value: string) => {
+    setEnteredValue(value);
+    setDidEdit(false);
+    setIsExists(false);
+    setError(null);
+  }, []);
+
   return {
     value: enteredValue,
     handleInputChange,
@@ -61,5 +68,6 @@ export function useGroupNameValidator(
     isExists,
     error,
     valueIsValid,
+    setValue,
   };
 }

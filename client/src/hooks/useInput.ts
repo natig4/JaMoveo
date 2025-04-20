@@ -1,4 +1,4 @@
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, useCallback } from "react";
 
 export function useInput(
   defaultValue: string,
@@ -20,10 +20,16 @@ export function useInput(
     setDidEdit(true);
   }
 
+  const setValue = useCallback((value: string) => {
+    setEnteredValue(value);
+    setDidEdit(false);
+  }, []);
+
   return {
     value: enteredValue,
     handleInputChange,
     handleInputBlur,
     hasError: didEdit && !valueIsValid,
+    setValue,
   };
 }

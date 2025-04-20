@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
 import {
   updateUserProfile,
@@ -34,6 +34,7 @@ function UserProfileForm() {
     handleInputChange: handleInstrumentChange,
     handleInputBlur: handleInstrumentBlur,
     hasError: instrumentHasError,
+    setValue: setInstrument,
   } = useInput(user?.instrument || "", (value) => value.trim() !== "");
 
   const {
@@ -42,6 +43,7 @@ function UserProfileForm() {
     handleInputBlur: handleGroupBlur,
     hasError: groupHasError,
     isChecking,
+    setValue: setGroupName,
   } = useGroupNameValidator(user?.groupName || "", false);
 
   const {
@@ -53,6 +55,25 @@ function UserProfileForm() {
     isExists: newGroupExists,
     error: newGroupError,
   } = useGroupNameValidator("", true);
+
+  useEffect(() => {
+    if (user?.instrument && !instrument) {
+      setInstrument(user.instrument);
+    }
+
+    if (user?.groupName && groupName) {
+      setGroupName(user.groupName);
+    } else if (!user?.groupName && groupName) {
+      setGroupName("");
+    }
+  }, [
+    user?.instrument,
+    setInstrument,
+    user?.groupName,
+    instrument,
+    groupName,
+    setGroupName,
+  ]);
 
   const handleInstrumentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
