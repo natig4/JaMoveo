@@ -156,6 +156,9 @@ const songsSlice = createSlice({
   initialState,
   reducers: {
     setSearchQuery(state, action: PayloadAction<string>) {
+      if (!action.payload) {
+        state.filteredSongs = state.songs;
+      }
       state.searchQuery = action.payload;
       state.error = null;
       state.loadMoreError = null;

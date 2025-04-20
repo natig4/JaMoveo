@@ -89,8 +89,12 @@
     padding: 0;
 
     .quit {
-      right: 35%;
       bottom: variables.$mobile-bottom-position;
+      left: 10%;
+      &.rtl {
+        left: auto;
+        right: 10%;
+      }
     }
   }
 }

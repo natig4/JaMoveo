@@ -5,7 +5,7 @@ interface SocketContextValue {
   connected: boolean;
   selectSong: (songId: string) => void;
   quitSong: () => void;
-  currentSong: ISong | null;
+  currentSong: (ISong & { isHebrew: boolean }) | null;
   isLoading?: boolean;
 }
 

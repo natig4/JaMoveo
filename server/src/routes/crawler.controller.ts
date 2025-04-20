@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { crawlPopularSongs } from "../services/crawler.service";
+import { timeoutPromise, TIMEOUT } from "../utils/helpers";
 
 export async function getPopularSongs(
   req: Request,
@@ -17,7 +18,10 @@ export async function getPopularSongs(
       return;
     }
 
-    const result = await crawlPopularSongs(limit);
+    const result = (await Promise.race([
+      crawlPopularSongs(limit),
+      timeoutPromise,
+    ])) as Awaited<ReturnType<typeof crawlPopularSongs>>;
 
     res.status(200).json({
       success: true,
@@ -28,7 +32,11 @@ export async function getPopularSongs(
     console.error("Error getting popular songs:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to get popular songs",
+      message:
+        error instanceof Error &&
+        error.message === `Request timed out after ${TIMEOUT / 1000} seconds`
+          ? "Request timed out"
+          : "Failed to get popular songs",
     });
   }
 }

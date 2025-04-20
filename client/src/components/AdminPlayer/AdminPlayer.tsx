@@ -4,6 +4,7 @@ import {
   fetchSongs,
   loadMoreThenFetch,
   clearSongsErrors,
+  setSearchQuery,
 } from "../../store/songs-slice";
 import SearchSongs from "../SearchSongs/SearchSongs";
 import styles from "./AdminPlayer.module.scss";
@@ -26,6 +27,7 @@ export default function AdminPlayer() {
 
   useEffect(() => {
     dispatch(clearSongsErrors());
+    dispatch(setSearchQuery(""));
 
     if (!initialFetchDone && !loading) {
       dispatch(fetchSongs());

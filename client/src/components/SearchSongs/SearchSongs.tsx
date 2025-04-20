@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { FaSearch } from "react-icons/fa";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
 import { searchSongs, setSearchQuery } from "../../store/songs-slice";
@@ -10,20 +10,17 @@ const SearchSongs: React.FC = () => {
   const dispatch = useAppDispatch();
   const { searchQuery, searchLoading } = useAppSelector((state) => state.songs);
   const [inputValue, setInputValue] = useState(searchQuery);
+  const timeoutRef = useRef<number>(null);
 
   const debouncedSearch = useCallback(
-    (() => {
-      let timeout: number | null = null;
+    (query: string) => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
 
-      return (query: string) => {
-        if (timeout) clearTimeout(timeout);
-
-        timeout = setTimeout(() => {
-          dispatch(setSearchQuery(query));
-          dispatch(searchSongs(query));
-        }, DEBOUNCE_DELAY);
-      };
-    })(),
+      timeoutRef.current = setTimeout(() => {
+        dispatch(setSearchQuery(query));
+        dispatch(searchSongs(query));
+      }, DEBOUNCE_DELAY);
+    },
     [dispatch]
   );
 

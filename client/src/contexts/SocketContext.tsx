@@ -5,6 +5,7 @@ import { RootState } from "../store";
 import { ISong } from "../model/types";
 import { SocketContext } from "./SocketContextParams";
 import * as songsService from "../services/songs.service";
+import { isHebrewText } from "../services/helpers.service";
 
 interface SocketContextProps {
   children: React.ReactNode;
@@ -15,7 +16,9 @@ export const SocketProvider: React.FC<SocketContextProps> = ({ children }) => {
     (state: RootState) => state.auth
   );
   const [connected, setConnected] = useState(false);
-  const [currentSong, setCurrentSong] = useState<ISong | null>(null);
+  const [currentSong, setCurrentSong] = useState<
+    (ISong & { isHebrew: boolean }) | null
+  >(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeCheckDone, setActiveCheckDone] = useState(false);
 
@@ -33,7 +36,8 @@ export const SocketProvider: React.FC<SocketContextProps> = ({ children }) => {
     setIsLoading(true);
     try {
       const song = await songsService.getSongById(songId);
-      setCurrentSong(song);
+
+      setCurrentSong({ ...song, ...{ isHebrew: isHebrewSong(song) } });
     } catch (error) {
       console.error("Error fetching selected song:", error);
     } finally {
@@ -124,3 +128,11 @@ export const SocketProvider: React.FC<SocketContextProps> = ({ children }) => {
     </SocketContext.Provider>
   );
 };
+
+function isHebrewSong(song: ISong): boolean {
+  return (
+    song.data.length > 0 &&
+    song.data[0].length > 0 &&
+    isHebrewText(song.data[0][0].lyrics)
+  );
+}

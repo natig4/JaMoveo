@@ -80,7 +80,10 @@ function PlayerPage() {
       )}
 
       {isAdmin && currentSong && (
-        <StyledButton className={styles.quit} onClick={handleQuit}>
+        <StyledButton
+          className={`${styles.quit} ${currentSong.isHebrew ? styles.rtl : ""}`}
+          onClick={handleQuit}
+        >
           Quit
         </StyledButton>
       )}

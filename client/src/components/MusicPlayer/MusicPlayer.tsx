@@ -4,20 +4,15 @@ import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
 import { stopScrolling } from "../../store/songs-slice";
 import styles from "./MusicPlayer.module.scss";
 import ScrollManager from "./ScrollManager/ScrollManager";
-
-function isHebrewText(text: string): boolean {
-  const hebrewRegex = /[\u0590-\u05FF]/;
-  return hebrewRegex.test(text);
-}
+import { isHebrewText } from "../../services/helpers.service";
 
 interface MusicPlayerProps {
-  song: ISong;
+  song: ISong & { isHebrew: boolean };
   instrument?: string;
 }
 
 export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
   const [currentLineIndex, setCurrentLineIndex] = useState(0);
-  const [isHebrew, setIsHebrew] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const prevLineIndexRef = useRef(0);
 
@@ -71,19 +66,13 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
     setCurrentLineIndex(0);
   }, [song.id]);
 
-  useEffect(() => {
-    const hasHebrewText =
-      song.data.length > 0 && song.data[0].length > 0
-        ? isHebrewText(song.data[0][0].lyrics)
-        : false;
-    setIsHebrew(hasHebrewText);
-  }, [song.data]);
-
   const showChords = instrument !== "vocals";
 
   return (
     <div
-      className={`${styles.playerContainer} ${isHebrew ? styles.rtlText : ""}`}
+      className={`${styles.playerContainer} ${
+        song.isHebrew ? styles.rtlText : ""
+      }`}
     >
       <div
         className={`${styles.header} ${
@@ -94,7 +83,7 @@ export default function MusicPlayer({ song, instrument }: MusicPlayerProps) {
         <h2>{song.artist}</h2>
       </div>
 
-      <ScrollManager isRtl={isHebrew} />
+      <ScrollManager isRtl={song.isHebrew} />
 
       <div className={styles.lyricsContainer} ref={scrollRef}>
         {song.data.map((line: SongLine, lineIndex: number) => (

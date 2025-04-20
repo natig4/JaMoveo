@@ -13,7 +13,8 @@
     .header:not(.rtl) {
       flex-direction: row-reverse;
       @media (max-width: variables.$breakpoint-sm) {
-        flex-direction: column-reverse;
+        flex-direction: column;
+        align-items: flex-end;
       }
     }
   }
