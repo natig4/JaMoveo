@@ -112,7 +112,7 @@ async function saveGroups(): Promise<void> {
       });
 
       writeStream.on("finish", () => {
-        console.log("Groups saved to file");
+        console.log("Groups saved to file", fileContent);
         resolve();
       });
 

@@ -8,7 +8,7 @@ import UserProfileForm from "../../components/UserProfileForm/UserProfileForm";
 import { UserRole } from "../../model/types";
 import { useSocket } from "../../contexts/SocketContextParams";
 import { useEffect, useState } from "react";
-import MissingInstrumentPrompt from "../../components/MissingInstrumentPrompt/MissingInstrumentPrompt";
+import UserOnboardingPrompt from "../../components/UserOnboardingPrompt/UserOnboardingPrompt";
 
 function User() {
   const { quitSong } = useSocket();
@@ -16,13 +16,13 @@ function User() {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const [showInstrumentPrompt, setShowInstrumentPrompt] = useState(false);
+  const [showOnboardingPrompt, setShowOnboardingPrompt] = useState(false);
 
   useEffect(() => {
-    if (user && !user.instrument) {
-      setShowInstrumentPrompt(true);
+    if (user && (!user.instrument || !user.groupId)) {
+      setShowOnboardingPrompt(true);
     } else {
-      setShowInstrumentPrompt(false);
+      setShowOnboardingPrompt(false);
     }
   }, [user]);
 
@@ -35,7 +35,7 @@ function User() {
 
   return (
     <>
-      {showInstrumentPrompt && <MissingInstrumentPrompt />}
+      {showOnboardingPrompt && <UserOnboardingPrompt />}
 
       <div className={styles.container}>
         <div className={styles.header}>
