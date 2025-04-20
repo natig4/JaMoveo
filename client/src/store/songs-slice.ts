@@ -69,29 +69,54 @@ export const searchSongs = createAsyncThunk(
 
 export const loadMoreThenFetch = createAsyncThunk(
   "songs/loadMoreThenFetch",
-  async (_, { dispatch, rejectWithValue }) => {
+  async (_, { dispatch, getState }) => {
+    const state = (getState() as { songs: SongsState }).songs;
+    const currentSongs = state.songs;
+
+    const results = {
+      loadMoreSuccess: false,
+      fetchSuccess: false,
+      loadMoreSongs: [] as ISong[],
+      fetchedSongs: [] as ISong[],
+      loadMoreError: null as string | null,
+      fetchError: null as string | null,
+      currentSongs,
+    };
+
     try {
       const loadMoreResult = await dispatch(loadMoreSongs());
 
       if (loadMoreSongs.fulfilled.match(loadMoreResult)) {
-        const fetchResult = await dispatch(fetchSongs());
-
-        if (fetchSongs.fulfilled.match(fetchResult)) {
-          return {
-            loadMore: loadMoreResult.payload,
-            fetched: fetchResult.payload,
-          };
-        } else {
-          return rejectWithValue("Fetching songs failed failed");
-        }
-      } else {
-        return rejectWithValue("Loading more songs failed");
+        results.loadMoreSuccess = true;
+        results.loadMoreSongs = loadMoreResult.payload.songs;
+      } else if (loadMoreSongs.rejected.match(loadMoreResult)) {
+        results.loadMoreError = loadMoreResult.payload as string;
       }
     } catch (error) {
-      return rejectWithValue(
-        error instanceof Error ? error.message : "Unknown error"
-      );
+      results.loadMoreError =
+        error instanceof Error
+          ? error.message
+          : "Unknown error during loadMoreSongs";
     }
+
+    // Always attempt to fetch songs regardless of what happened with loading more
+    try {
+      const fetchResult = await dispatch(fetchSongs());
+
+      if (fetchSongs.fulfilled.match(fetchResult)) {
+        results.fetchSuccess = true;
+        results.fetchedSongs = fetchResult.payload;
+      } else if (fetchSongs.rejected.match(fetchResult)) {
+        results.fetchError = fetchResult.payload as string;
+      }
+    } catch (error) {
+      results.fetchError =
+        error instanceof Error
+          ? error.message
+          : "Unknown error during fetchSongs";
+    }
+
+    return results;
   }
 );
 
@@ -107,7 +132,7 @@ export const loadMoreSongs = createAsyncThunk(
       const state = getState() as { songs: SongsState };
 
       if (!state.songs.hasMoreSongs) {
-        return { songs: [], hasMore: false, nextPage: null };
+        return { songs: [], hasMore: false };
       }
 
       const response = await crawlerService.fetchPopularSongs();
@@ -206,18 +231,51 @@ const songsSlice = createSlice({
         state.filteredSongs = getUniqueSongs(state.filteredSongs, songs);
       }
 
+      state.songs = getUniqueSongs(state.songs, songs);
       state.loadMoreLoading = false;
       state.hasMoreSongs = !!hasMore;
     });
     builder.addCase(loadMoreSongs.rejected, (state, action) => {
       state.loadMoreLoading = false;
       state.loadMoreError = action.payload as string;
-      console.log("loading more songs failed");
     });
 
-    builder.addCase(loadMoreThenFetch.rejected, (state, action) => {
+    builder.addCase(loadMoreThenFetch.pending, (state) => {
+      state.loadMoreLoading = true;
+    });
+
+    builder.addCase(loadMoreThenFetch.fulfilled, (state, action) => {
+      const results = action.payload;
       state.loadMoreLoading = false;
-      state.loadMoreError = action.payload as string;
+
+      // IMPORTANT: Ensure we preserve existing songs no matter what
+      const allSongs: ISong[] = [...results.currentSongs];
+
+      if (results.loadMoreSuccess && results.loadMoreSongs.length > 0) {
+        const newFromCrawler = getUniqueSongs(allSongs, results.loadMoreSongs);
+        allSongs.push(...newFromCrawler);
+      }
+
+      if (results.fetchSuccess && results.fetchedSongs.length > 0) {
+        const newFromFetch = getUniqueSongs(allSongs, results.fetchedSongs);
+        allSongs.push(...newFromFetch);
+      }
+
+      state.songs = allSongs;
+
+      if (!state.searchQuery) {
+        state.filteredSongs = allSongs;
+      }
+
+      state.loadMoreError = results.loadMoreError;
+      if (results.fetchError && !state.error) {
+        state.error = results.fetchError;
+      }
+    });
+
+    builder.addCase(loadMoreThenFetch.rejected, (state) => {
+      state.loadMoreLoading = false;
+      state.loadMoreError = "Failed to execute song fetch operations";
     });
   },
 });
