@@ -1,8 +1,10 @@
 export const TIMEOUT = 7000;
 
-export const timeoutPromise = new Promise((_, reject) => {
-  setTimeout(
-    () => reject(new Error("Request timed out after 7 seconds")),
-    TIMEOUT
-  );
-});
+export function createTimeoutPromise(ms = TIMEOUT): Promise<never> {
+  return new Promise((_, reject) => {
+    setTimeout(
+      () => reject(new Error(`Request timed out after ${ms / 1000} seconds`)),
+      ms
+    );
+  });
+}

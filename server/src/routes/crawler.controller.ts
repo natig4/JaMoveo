@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { crawlPopularSongs } from "../services/crawler.service";
-import { timeoutPromise, TIMEOUT } from "../utils/helpers";
+import { createTimeoutPromise, TIMEOUT } from "../utils/helpers";
 
 export async function getPopularSongs(
   req: Request,
@@ -20,7 +20,7 @@ export async function getPopularSongs(
 
     const result = (await Promise.race([
       crawlPopularSongs(limit),
-      timeoutPromise,
+      createTimeoutPromise(),
     ])) as Awaited<ReturnType<typeof crawlPopularSongs>>;
 
     res.status(200).json({
