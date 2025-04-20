@@ -44,7 +44,7 @@ export function getGroupById(id: string): IGroup | undefined {
 
 export function getGroupByName(name: string): IGroup | undefined {
   return groups.find(
-    (group) => group.name?.toLowerCase() === name?.toLowerCase()
+    (group) => group.name?.toLowerCase() === name?.toLowerCase().trim()
   );
 }
 
@@ -56,6 +56,7 @@ export async function createGroup(
   name: string,
   adminId: string
 ): Promise<IGroup> {
+  name = name.trim();
   if (getGroupByName(name)) {
     throw new Error("Group name already exists");
   }

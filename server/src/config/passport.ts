@@ -13,17 +13,17 @@ passport.serializeUser((user: any, done) => {
   done(null, user.id);
 });
 
-passport.deserializeUser(async (id: string, done) => {
+passport.deserializeUser((id: string, done) => {
   try {
     const user = getUserById(id);
     if (!user) {
-      return done(new Error("User not found"), null);
+      return done(null, false);
     }
 
     const { password, googleId, ...userWithoutSensitiveInfo } = user;
     done(null, userWithoutSensitiveInfo);
   } catch (error) {
-    done(error, null);
+    done(null, false);
   }
 });
 

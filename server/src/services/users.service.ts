@@ -229,7 +229,7 @@ async function saveUsers(): Promise<void> {
       });
 
       writeStream.on("finish", () => {
-        console.log("Users saved to file");
+        console.log("Users saved to file", fileContent);
         resolve();
       });
 

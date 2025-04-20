@@ -64,10 +64,6 @@ app.use(
 );
 
 app.use((req, _res, next) => {
-  if (req.session && !req.session.cookie) {
-    req.session.cookie = {};
-  }
-
   if (req.session && !req.session.regenerate) {
     req.session.regenerate = (cb: (err?: Error) => void) => {
       cb();
@@ -99,14 +95,6 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 
 app.use(passport.initialize());
 app.use(passport.session());
-
-// TODO: remember to remove it.
-if (config.nodeEnv === "development") {
-  app.use((req: Request, _res: Response, next: NextFunction) => {
-    console.log(`${new Date().toISOString()} | ${req.method} ${req.url}`);
-    next();
-  });
-}
 
 app.use("/users", usersRouter);
 app.use("/auth", authRouter);
