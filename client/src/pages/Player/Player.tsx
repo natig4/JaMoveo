@@ -6,7 +6,7 @@ import styles from "./Player.module.scss";
 import AdminPlayer from "../../components/AdminPlayer/AdminPlayer";
 import MusicPlayer from "../../components/MusicPlayer/MusicPlayer";
 import { UserRole } from "../../model/types";
-import { clearSongsErrors, stopScrolling } from "../../store/songs-slice";
+import { clearSongsErrors } from "../../store/songs-slice";
 import StyledButton from "../../components/StyledButton/StyledButton";
 import { useSocket } from "../../hooks/useSocket";
 import { Navigate } from "react-router-dom";
@@ -31,7 +31,6 @@ function PlayerPage() {
   }
 
   const handleQuit = () => {
-    dispatch(stopScrolling());
     quitSong();
   };
 

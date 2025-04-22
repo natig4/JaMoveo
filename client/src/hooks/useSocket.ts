@@ -7,6 +7,7 @@ import {
   checkActiveSong,
   cleanupSocket,
 } from "../store/socket-slice";
+import { stopScrolling } from "../store/songs-slice";
 
 export function useSocket() {
   const dispatch = useAppDispatch();
@@ -28,6 +29,7 @@ export function useSocket() {
 
   const quitSong = () => {
     if (!user) return;
+    dispatch(stopScrolling());
     dispatch(quitSongAction(user.id));
   };
 
