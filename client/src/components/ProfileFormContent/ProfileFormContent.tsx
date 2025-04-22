@@ -10,6 +10,7 @@ import {
   updateInstrument,
   updateGroup,
   createGroup,
+  setCompletedInstrument,
 } from "../../store/profile-forms-slice";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
 import { UserRole } from "../../model/types";
@@ -28,14 +29,12 @@ interface ProfileFormContentProps {
     infoBox?: string;
     backButton?: string;
   };
-  showTabs?: boolean;
   onBack?: () => void;
 }
 
 const ProfileFormContent: React.FC<ProfileFormContentProps> = ({
   variant,
   className = {},
-  showTabs = true,
   onBack,
 }) => {
   const dispatch = useAppDispatch();
@@ -82,7 +81,7 @@ const ProfileFormContent: React.FC<ProfileFormContentProps> = ({
     if (user && instrument && instrument !== user.instrument) {
       dispatch(updateInstrument({ userId: user.id, instrument }));
       if (isOnboarding) {
-        handleTabChange("group");
+        dispatch(setCompletedInstrument(true));
       }
     }
   };
@@ -110,40 +109,38 @@ const ProfileFormContent: React.FC<ProfileFormContentProps> = ({
 
   return (
     <>
-      {showTabs && (
-        <div className={styles.tabs}>
+      <div className={styles.tabs}>
+        <button
+          className={`${styles.tab} ${
+            activeTab === "instrument" ? styles.activeTab : ""
+          }`}
+          onClick={() => handleTabChange("instrument")}
+        >
+          Instrument
+        </button>
+
+        {!isAdmin && (
           <button
             className={`${styles.tab} ${
-              activeTab === "instrument" ? styles.activeTab : ""
+              activeTab === "group" ? styles.activeTab : ""
             }`}
-            onClick={() => handleTabChange("instrument")}
+            onClick={() => handleTabChange("group")}
           >
-            Instrument
+            Join Group
           </button>
+        )}
 
-          {!isAdmin && (
-            <button
-              className={`${styles.tab} ${
-                activeTab === "group" ? styles.activeTab : ""
-              }`}
-              onClick={() => handleTabChange("group")}
-            >
-              Join Group
-            </button>
-          )}
-
-          {!isAdmin && (
-            <button
-              className={`${styles.tab} ${
-                activeTab === "createGroup" ? styles.activeTab : ""
-              }`}
-              onClick={() => handleTabChange("createGroup")}
-            >
-              Create Group
-            </button>
-          )}
-        </div>
-      )}
+        {!isAdmin && (
+          <button
+            className={`${styles.tab} ${
+              activeTab === "createGroup" ? styles.activeTab : ""
+            }`}
+            onClick={() => handleTabChange("createGroup")}
+          >
+            Create Group
+          </button>
+        )}
+      </div>
 
       {activeTab === "instrument" && (
         <form

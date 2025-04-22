@@ -22,7 +22,6 @@ interface ProfileFormsState {
     instrument: boolean;
     group: boolean;
   };
-  showTabs: boolean;
 }
 
 const initialState: ProfileFormsState = {
@@ -39,7 +38,6 @@ const initialState: ProfileFormsState = {
     instrument: false,
     group: false,
   },
-  showTabs: false,
 };
 
 // Async actions
@@ -146,9 +144,6 @@ const profileFormsSlice = createSlice({
     setCompletedGroup(state, action: PayloadAction<boolean>) {
       state.onboardingCompleted.group = action.payload;
     },
-    setShowTabs(state, action: PayloadAction<boolean>) {
-      state.showTabs = action.payload;
-    },
     syncFormWithUserData(
       state,
       action: PayloadAction<{
@@ -159,16 +154,19 @@ const profileFormsSlice = createSlice({
     ) {
       const { instrument, groupName, groupId } = action.payload;
 
-      if (instrument) {
+      if (instrument && instrument !== state.instrument) {
         state.instrument = instrument;
         state.onboardingCompleted.instrument = true;
       }
 
-      if (groupName) {
+      if (groupName && groupName !== state.groupName) {
         state.groupName = groupName;
       }
 
-      if (groupId || groupName) {
+      if (
+        (groupId && !state.onboardingCompleted.group) ||
+        (groupName && !state.onboardingCompleted.group)
+      ) {
         state.onboardingCompleted.group = true;
       }
     },
@@ -189,7 +187,6 @@ export const {
   clearSuccessMessage,
   setCompletedInstrument,
   setCompletedGroup,
-  setShowTabs,
   syncFormWithUserData,
   resetFormState,
 } = profileFormsSlice.actions;

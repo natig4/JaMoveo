@@ -7,24 +7,15 @@ import StyledButton from "../../components/StyledButton/StyledButton";
 import UserProfileForm from "../../components/UserProfileForm/UserProfileForm";
 import { UserRole } from "../../model/types";
 import { useSocket } from "../../contexts/SocketContextParams";
-import { useEffect, useState } from "react";
 import UserOnboardingPrompt from "../../components/UserOnboardingPrompt/UserOnboardingPrompt";
 
 function User() {
   const { quitSong } = useSocket();
-  const { user } = useAppSelector((state) => state.auth);
+  const { user } = useAppSelector((state) => {
+    return state.auth;
+  });
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-
-  const [showOnboardingPrompt, setShowOnboardingPrompt] = useState(false);
-
-  useEffect(() => {
-    if (user && (!user.instrument || !user.groupId)) {
-      setShowOnboardingPrompt(true);
-    } else {
-      setShowOnboardingPrompt(false);
-    }
-  }, [user]);
 
   const handleLogout = async () => {
     quitSong();
@@ -35,7 +26,9 @@ function User() {
 
   return (
     <>
-      {showOnboardingPrompt && <UserOnboardingPrompt />}
+      {(!user?.instrument || !user?.groupId) && (
+        <UserOnboardingPrompt user={user} />
+      )}
 
       <div className={styles.container}>
         <div className={styles.header}>
