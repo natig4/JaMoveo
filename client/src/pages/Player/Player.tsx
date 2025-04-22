@@ -8,7 +8,7 @@ import MusicPlayer from "../../components/MusicPlayer/MusicPlayer";
 import { UserRole } from "../../model/types";
 import { clearSongsErrors, stopScrolling } from "../../store/songs-slice";
 import StyledButton from "../../components/StyledButton/StyledButton";
-import { useSocket } from "../../contexts/SocketContextParams";
+import { useSocket } from "../../hooks/useSocket";
 import { Navigate } from "react-router-dom";
 import LoadingPage from "../../components/Loading/Loading";
 import { useEffect } from "react";
@@ -16,13 +16,15 @@ import { useEffect } from "react";
 function PlayerPage() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { currentSong, quitSong, connected, isLoading } = useSocket();
+  const { currentSong, quitSong, connected, isLoading, initialize } =
+    useSocket();
 
   useEffect(() => {
+    initialize();
     return () => {
       dispatch(clearSongsErrors());
     };
-  }, [dispatch]);
+  }, [dispatch, initialize]);
 
   if (!user?.instrument || !user?.groupId) {
     return <Navigate to='/user' replace />;

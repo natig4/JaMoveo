@@ -3,7 +3,7 @@ import { ISong, UserRole } from "../../model/types";
 
 import styles from "./Song.module.scss";
 import { useAppSelector } from "../../hooks/redux-hooks";
-import { useSocket } from "../../contexts/SocketContextParams";
+import { useSocket } from "../../hooks/useSocket";
 
 export default function Song({ song }: { song: ISong }) {
   const { user } = useAppSelector((state) => state.auth);

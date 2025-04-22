@@ -6,7 +6,7 @@ import styles from "./User.module.scss";
 import StyledButton from "../../components/StyledButton/StyledButton";
 import UserProfileForm from "../../components/UserProfileForm/UserProfileForm";
 import { UserRole } from "../../model/types";
-import { useSocket } from "../../contexts/SocketContextParams";
+import { useSocket } from "../../hooks/useSocket";
 import UserOnboardingPrompt from "../../components/UserOnboardingPrompt/UserOnboardingPrompt";
 
 function User() {
