@@ -21,7 +21,6 @@ interface SocketState {
   connected: boolean;
   currentSong: SongWithHebrew | null;
   isLoading: boolean;
-  activeCheckDone: boolean;
   initialized: boolean;
 }
 
@@ -29,7 +28,6 @@ const initialState: SocketState = {
   connected: false,
   currentSong: null,
   isLoading: false,
-  activeCheckDone: false,
   initialized: false,
 };
 
@@ -68,6 +66,11 @@ export const initializeSocket = createAsyncThunk(
   }
 );
 
+export const cleanupSocket = createAsyncThunk("socket/cleanup", async () => {
+  socketService.disconnect();
+  return true;
+});
+
 export const handleSongSelected = createAsyncThunk(
   "socket/handleSongSelected",
   async (songId: string, { dispatch }) => {
@@ -101,14 +104,13 @@ export const checkActiveSong = createAsyncThunk(
   "socket/checkActiveSong",
   async (_, { dispatch, getState }) => {
     const state = getState() as RootState;
-    if (!state.socket.connected || state.socket.activeCheckDone) {
+    if (!state.socket.connected) {
       return null;
     }
 
-    dispatch(setActiveCheckDone(true));
-
     return new Promise<string | null>((resolve) => {
       socketService.getActiveSong((songId) => {
+        console.log("songId", songId);
         if (songId) {
           dispatch(fetchSong(songId));
         }
@@ -145,10 +147,6 @@ const socketSlice = createSlice({
   reducers: {
     setConnected(state, action: PayloadAction<boolean>) {
       state.connected = action.payload;
-      // Reset active check when disconnected
-      if (!action.payload) {
-        state.activeCheckDone = false;
-      }
     },
     setCurrentSong(state, action: PayloadAction<ISong | null>) {
       if (action.payload) {
@@ -163,11 +161,7 @@ const socketSlice = createSlice({
     setIsLoading(state, action: PayloadAction<boolean>) {
       state.isLoading = action.payload;
     },
-    setActiveCheckDone(state, action: PayloadAction<boolean>) {
-      state.activeCheckDone = action.payload;
-    },
     resetSocketState(state) {
-      // Reset state but keep initialized flag
       return {
         ...initialState,
         initialized: state.initialized,
@@ -176,12 +170,17 @@ const socketSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Initialize socket
       .addCase(initializeSocket.fulfilled, (state) => {
         state.initialized = true;
       })
 
-      // Fetch song
+      .addCase(cleanupSocket.fulfilled, (state) => {
+        state.initialized = false;
+        state.connected = false;
+        state.currentSong = null;
+        state.isLoading = false;
+      })
+
       .addCase(fetchSong.pending, (state) => {
         state.isLoading = true;
       })
@@ -191,10 +190,6 @@ const socketSlice = createSlice({
       })
       .addCase(fetchSong.rejected, (state) => {
         state.isLoading = false;
-      })
-
-      .addCase(checkActiveSong.pending, (state) => {
-        state.activeCheckDone = true;
       })
 
       .addCase(selectSong.fulfilled, (state) => {
@@ -207,12 +202,7 @@ const socketSlice = createSlice({
   },
 });
 
-export const {
-  setConnected,
-  setCurrentSong,
-  setIsLoading,
-  setActiveCheckDone,
-  resetSocketState,
-} = socketSlice.actions;
+export const { setConnected, setCurrentSong, setIsLoading, resetSocketState } =
+  socketSlice.actions;
 
 export default socketSlice.reducer;

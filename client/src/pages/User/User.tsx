@@ -10,7 +10,7 @@ import { useSocket } from "../../hooks/useSocket";
 import UserOnboardingPrompt from "../../components/UserOnboardingPrompt/UserOnboardingPrompt";
 
 function User() {
-  const { quitSong } = useSocket();
+  const { logout } = useSocket();
   const { user } = useAppSelector((state) => {
     return state.auth;
   });
@@ -18,7 +18,7 @@ function User() {
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    quitSong();
+    logout();
     dispatch(cleanState());
     await dispatch(logoutUser());
     navigate("/signin");

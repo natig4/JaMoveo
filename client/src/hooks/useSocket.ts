@@ -5,6 +5,7 @@ import {
   quitSong as quitSongAction,
   initializeSocket,
   checkActiveSong,
+  cleanupSocket,
 } from "../store/socket-slice";
 
 export function useSocket() {
@@ -30,11 +31,17 @@ export function useSocket() {
     dispatch(quitSongAction(user.id));
   };
 
+  const logout = () => {
+    quitSong();
+    dispatch(cleanupSocket());
+  };
+
   return {
     connected,
     currentSong,
     isLoading,
     selectSong,
+    logout,
     quitSong,
     initialize: () => dispatch(initializeSocket()),
   };
