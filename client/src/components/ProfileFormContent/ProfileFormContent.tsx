@@ -81,6 +81,9 @@ const ProfileFormContent: React.FC<ProfileFormContentProps> = ({
     e.preventDefault();
     if (user && instrument && instrument !== user.instrument) {
       dispatch(updateInstrument({ userId: user.id, instrument }));
+      if (isOnboarding) {
+        handleTabChange("group");
+      }
     }
   };
 
