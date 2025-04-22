@@ -1,13 +1,12 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import AuthRedirect from "./components/AuthRedirect";
-import ProtectedRoute from "./components/ProtectedRoute";
-import SiteHeader from "./components/SiteHeader/SiteHeader";
 import Signup from "./pages/Signup";
 import Player from "./pages/Player/Player";
 import Signin from "./pages/Signin";
 import SignupAdmin from "./pages/SignupAdmin";
 import User from "./pages/User/User";
 import ForgotPassword from "./pages/ForgotPassword";
+import MainView from "./components/MainView/MainView";
 
 function SiteRoutes() {
   return (
@@ -47,19 +46,17 @@ function SiteRoutes() {
       <Route
         path='/user'
         element={
-          <ProtectedRoute>
-            <SiteHeader />
+          <MainView>
             <User />
-          </ProtectedRoute>
+          </MainView>
         }
       />
       <Route
         path='/'
         element={
-          <ProtectedRoute>
-            <SiteHeader />
+          <MainView>
             <Player />
-          </ProtectedRoute>
+          </MainView>
         }
       />
       <Route path='*' element={<Navigate to='/' replace />} />

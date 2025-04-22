@@ -112,8 +112,6 @@ export const checkActiveSong = createAsyncThunk(
       socketService.getActiveSong((songId) => {
         if (songId) {
           dispatch(fetchSong(songId));
-        } else {
-          dispatch(quitSong(state.auth.user?.id || ""));
         }
         resolve(songId);
       });
