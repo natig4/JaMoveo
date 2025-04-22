@@ -66,6 +66,7 @@ export async function createGroup(
     name,
     adminId,
     createdAt: new Date(),
+    activeSongId: null,
   };
 
   groups.push(newGroup);
@@ -95,6 +96,25 @@ export async function updateGroup(
   groups[index] = { ...groups[index], ...updateData };
   await saveGroups();
   return groups[index];
+}
+
+export async function setActiveGroupSong(
+  groupId: string,
+  songId: string | null
+): Promise<IGroup | null> {
+  const index = groups.findIndex((group) => group.id === groupId);
+  if (index === -1) {
+    return null;
+  }
+
+  groups[index].activeSongId = songId;
+  await saveGroups();
+  return groups[index];
+}
+
+export function getActiveGroupSong(groupId: string): string | null {
+  const group = getGroupById(groupId);
+  return group?.activeSongId || null;
 }
 
 async function saveGroups(): Promise<void> {

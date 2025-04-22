@@ -1,7 +1,11 @@
 import { Server, Socket } from "socket.io";
 import { getUserById } from "../services/users.service";
 import { getSongById } from "../services/songs.service";
-import { getGroupById } from "../services/groups.service";
+import {
+  getGroupById,
+  getActiveGroupSong,
+  setActiveGroupSong,
+} from "../services/groups.service";
 import { IUser } from "../models/types";
 import {
   ServerToClientEvents,
@@ -13,10 +17,10 @@ import {
   QuitSongData,
 } from "./types";
 
+// Better to use redis here. and if we do, add activeGroupSongs to it as well
 const userSockets = new Map<string, string[]>();
 const userGroups = new Map<string, string>();
 const groupRooms = new Map<string, Set<string>>();
-const activeGroupSongs = new Map<string, string>();
 
 export function handleConnection(
   io: Server<
@@ -49,7 +53,7 @@ export function handleConnection(
         if (group) {
           joinGroupRoom(socket, user, group.id);
 
-          activeSongId = activeGroupSongs.get(group.id);
+          activeSongId = group.activeSongId || undefined;
         }
       }
 
@@ -110,7 +114,7 @@ function setupSocketEventListeners(
       if (socket.data.userId) {
         const user = getUserById(socket.data.userId);
         if (user && user.groupId) {
-          const activeSongId = activeGroupSongs.get(user.groupId) || null;
+          const activeSongId = getActiveGroupSong(user.groupId);
           callback(activeSongId);
           return;
         }
@@ -167,7 +171,7 @@ function handleAuthenticate(
     if (group) {
       joinGroupRoom(socket, user, group.id);
 
-      activeSongId = activeGroupSongs.get(group.id);
+      activeSongId = group.activeSongId || undefined;
     }
   }
 
@@ -208,14 +212,14 @@ async function handleSelectSong(
     return;
   }
 
-  activeGroupSongs.set(user.groupId, songId);
+  await setActiveGroupSong(user.groupId, songId);
 
   const roomId = `group:${user.groupId}`;
 
   io.to(roomId).emit("song_selected", { songId });
 }
 
-function handleQuitSong(
+async function handleQuitSong(
   io: Server<
     ClientToServerEvents,
     ServerToClientEvents,
@@ -223,7 +227,7 @@ function handleQuitSong(
     SocketData
   >,
   { userId }: QuitSongData
-): void {
+): Promise<void> {
   const user = getUserById(userId);
 
   if (!user || !user.groupId) return;
@@ -231,7 +235,7 @@ function handleQuitSong(
   const group = getGroupById(user.groupId);
   if (!group || group.adminId !== user.id) return;
 
-  activeGroupSongs.delete(user.groupId);
+  await setActiveGroupSong(user.groupId, null);
 
   const roomId = `group:${user.groupId}`;
 

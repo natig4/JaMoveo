@@ -23,6 +23,7 @@ export interface IGroup {
   name: string;
   adminId: string;
   createdAt: Date;
+  activeSongId: string | null;
 }
 
 export interface IUser {
