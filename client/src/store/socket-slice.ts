@@ -120,9 +120,25 @@ export const selectSong = createAsyncThunk(
     { userId, songId }: { userId: string; songId: string },
     { dispatch }
   ) => {
-    dispatch(setIsLoading(true));
-    socketService.selectSong(userId, songId);
-    return songId;
+    try {
+      dispatch(setIsLoading(true));
+      socketService.selectSong(userId, songId);
+
+      const timeoutPromise = new Promise<string>((_, reject) => {
+        setTimeout(() => {
+          reject(new Error("Song selection timed out"));
+        }, 5000);
+      });
+
+      return await Promise.race([
+        dispatch(fetchSong(songId)).unwrap(),
+        timeoutPromise,
+      ]);
+    } catch (error) {
+      dispatch(setIsLoading(false));
+      console.error("Error selecting song:", error);
+      throw error;
+    }
   }
 );
 
@@ -183,6 +199,10 @@ const socketSlice = createSlice({
 
       .addCase(selectSong.fulfilled, (state) => {
         state.isLoading = true;
+      })
+
+      .addCase(selectSong.rejected, (state) => {
+        state.isLoading = false;
       })
 
       .addCase(quitSong.fulfilled, (state) => {

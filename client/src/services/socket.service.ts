@@ -176,16 +176,41 @@ class SocketService {
     };
   }
 
-  selectSong(userId: string, songId: string) {
-    if (!userId) return;
+  selectSong(userId: string, songId: string): Promise<void> {
+    if (!userId) return Promise.reject(new Error("No user ID provided"));
 
-    if (this.connected && this.socket) {
-      this.socket.emit("select_song", { userId, songId });
-    } else {
-      this.pendingActions.push(() => {
-        this.socket?.emit("select_song", { userId, songId });
-      });
-    }
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("Song selection timed out"));
+      }, 8000);
+
+      const confirmListener = (data: { songId: string }) => {
+        if (data.songId === songId) {
+          clearTimeout(timeout);
+          this.socket?.off("song_selected", confirmListener);
+          resolve();
+        }
+      };
+
+      this.socket?.on("song_selected", confirmListener);
+
+      if (this.connected && this.socket) {
+        this.socket.emit("select_song", { userId, songId });
+      } else {
+        this.pendingActions.push(() => {
+          this.socket?.emit("select_song", { userId, songId });
+        });
+
+        resolve();
+      }
+
+      const errorHandler = (error: Error) => {
+        clearTimeout(timeout);
+        this.socket?.off("connect_error", errorHandler);
+        reject(error);
+      };
+      this.socket?.once("connect_error", errorHandler);
+    });
   }
 
   quitSong(userId: string) {
