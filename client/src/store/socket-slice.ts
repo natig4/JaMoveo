@@ -105,6 +105,8 @@ export const checkActiveSong = createAsyncThunk(
       socketService.getActiveSong((songId) => {
         if (songId) {
           dispatch(fetchSong(songId));
+        } else {
+          dispatch(setCurrentSong(null));
         }
         resolve(songId);
       });
