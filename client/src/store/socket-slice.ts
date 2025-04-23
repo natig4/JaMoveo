@@ -203,8 +203,8 @@ const socketSlice = createSlice({
         state.isLoading = true;
       })
 
-      .addCase(selectSong.rejected, (state) => {
-        console.log("rejected");
+      .addCase(selectSong.rejected, (state, action) => {
+        console.log("selectSong.rejected", action.payload);
 
         state.isLoading = false;
       })
