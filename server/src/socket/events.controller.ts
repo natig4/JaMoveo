@@ -213,29 +213,39 @@ function handleSelectSong(
   >,
   { userId, songId }: SelectSongData
 ): void {
-  const user = getUserById(userId);
+  console.log(`Handling select_song: userId=${userId}, songId=${songId}`);
 
+  const user = getUserById(userId);
   if (!user || !user.groupId) {
+    console.log("User not found or not in a group:", userId);
     return;
   }
 
   const group = getGroupById(user.groupId);
-
   if (!group || group.adminId !== user.id) {
+    console.log("User is not the admin of their group:", userId);
     return;
   }
 
   const song = getSongById(songId);
-
   if (!song) {
+    console.log("Song not found:", songId);
     return;
   }
 
   activeGroupSongs.set(user.groupId, songId);
-
   const roomId = `group:${user.groupId}`;
 
+  console.log(`Emitting song_selected to room ${roomId} with songId=${songId}`);
+
   io.to(roomId).emit("song_selected", { songId });
+
+  const userSocketIds = userSockets.get(userId) || [];
+  console.log(`Direct emitting to user sockets: ${userSocketIds.join(", ")}`);
+
+  userSocketIds.forEach((socketId) => {
+    io.to(socketId).emit("song_selected", { songId });
+  });
 }
 
 function handleQuitSong(
