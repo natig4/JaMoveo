@@ -184,20 +184,39 @@ class SocketService {
       connected: this.connected,
       pendingActions: this.pendingActions.length,
     });
+
     if (!userId) return Promise.reject(new Error("No user ID provided"));
 
-    const requestId = `${userId}-${songId}`;
+    const pendingSelectionExists = this.pendingActions.some((action) =>
+      action.toString().includes(songId)
+    );
+
+    if (pendingSelectionExists) {
+      console.log(
+        `Selection for song ${songId} already pending, resolving immediately`
+      );
+      return Promise.resolve();
+    }
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
+        console.log(`Selection timeout for song ${songId}`);
         this.socket?.off("song_selected", confirmListener);
         reject(new Error("Song selection timed out service"));
       }, 8000);
 
       const confirmListener = (data: { songId: string }) => {
+        console.log(
+          `Received song_selected event: ${data.songId}, expecting: ${songId}`
+        );
         if (data.songId === songId) {
           clearTimeout(timeout);
           this.socket?.off("song_selected", confirmListener);
+
+          this.pendingActions = this.pendingActions.filter(
+            (action) => !action.toString().includes(songId)
+          );
+
           resolve();
         }
       };
@@ -205,24 +224,20 @@ class SocketService {
       this.socket?.on("song_selected", confirmListener);
 
       if (this.connected && this.socket) {
-        const isDuplicate = this.pendingActions.some((action) =>
-          action.toString().includes(songId)
-        );
-
-        if (!isDuplicate) {
-          this.socket.emit("select_song", { userId, songId, requestId });
-        }
+        console.log(`Emitting select_song for ${songId}`);
+        this.socket.emit("select_song", { userId, songId });
       } else {
+        console.log(`Socket not connected, queueing selection for ${songId}`);
         const pendingAction = () => {
-          this.socket?.emit("select_song", { userId, songId, requestId });
+          console.log(`Executing queued selection for ${songId}`);
+          this.socket?.emit("select_song", { userId, songId });
         };
 
         this.pendingActions.push(pendingAction);
-
-        resolve();
       }
 
       const errorHandler = (error: Error) => {
+        console.error(`Socket error during song selection: ${error.message}`);
         clearTimeout(timeout);
         this.socket?.off("connect_error", errorHandler);
         reject(error);
