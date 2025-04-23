@@ -118,7 +118,7 @@ export const selectSong = createAsyncThunk(
   ) => {
     try {
       dispatch(setIsLoading(true));
-      socketService.selectSong(userId, songId);
+      await socketService.selectSong(userId, songId);
 
       const timeoutPromise = new Promise<string>((_, reject) => {
         setTimeout(() => {
@@ -201,6 +201,12 @@ const socketSlice = createSlice({
 
       .addCase(selectSong.fulfilled, (state) => {
         state.isLoading = true;
+      })
+
+      .addCase(selectSong.rejected, (state) => {
+        console.log("rejected");
+
+        state.isLoading = false;
       })
 
       .addCase(quitSong.fulfilled, (state) => {
