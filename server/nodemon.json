@@ -1,0 +1,18 @@
+{
+  "restartable": "rs",
+  "ignore": [".git", "node_modules/**/node_modules", "dist", "data/*.json"],
+  "verbose": true,
+  "execMap": {
+    "ts": "node --require ts-node/register"
+  },
+  "watch": ["src/"],
+  "env": {
+    "NODE_ENV": "development"
+  },
+  "ext": "js,json,ts",
+  "events": {
+    "restart": "node -e \"process.stdout.write('\\n[nodemon] Restarting due to changes...\\n')\"",
+    "crash": "node -e \"process.stdout.write('\\n[nodemon] App crashed, will restart after changes\\n')\""
+  },
+  "signal": "SIGUSR2"
+}

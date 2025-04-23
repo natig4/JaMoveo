@@ -12,12 +12,34 @@ import {
   SelectSongData,
   QuitSongData,
 } from "./types";
+import { loadActiveSongs } from "../services/activeSongs.service";
 
 // Better to use redis here
 const userSockets = new Map<string, string[]>();
 const userGroups = new Map<string, string>();
 const groupRooms = new Map<string, Set<string>>();
+
 const activeGroupSongs = new Map<string, string>();
+
+export async function initializeController(): Promise<void> {
+  try {
+    const loadedActiveSongs = await loadActiveSongs();
+
+    loadedActiveSongs.forEach((songId, groupId) => {
+      activeGroupSongs.set(groupId, songId);
+    });
+
+    console.log(
+      `Initialized socket controller with ${activeGroupSongs.size} active songs`
+    );
+  } catch (error) {
+    console.error("Error initializing socket controller:", error);
+  }
+}
+
+export function getActiveGroupSongs(): Map<string, string> {
+  return activeGroupSongs;
+}
 
 export function handleConnection(
   io: Server<
@@ -182,7 +204,7 @@ function handleAuthenticate(
   });
 }
 
-async function handleSelectSong(
+function handleSelectSong(
   io: Server<
     ClientToServerEvents,
     ServerToClientEvents,
@@ -190,7 +212,7 @@ async function handleSelectSong(
     SocketData
   >,
   { userId, songId }: SelectSongData
-): Promise<void> {
+): void {
   const user = getUserById(userId);
 
   if (!user || !user.groupId) {
