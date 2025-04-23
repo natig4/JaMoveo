@@ -179,12 +179,12 @@ class SocketService {
   selectSong(userId: string, songId: string): Promise<void> {
     if (!userId) return Promise.reject(new Error("No user ID provided"));
 
-    const requestId = `${userId}-${songId}-${Date.now()}`;
+    const requestId = `${userId}-${songId}`;
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.socket?.off("song_selected", confirmListener);
-        reject(new Error("Song selection timed out"));
+        reject(new Error("Song selection timed out service"));
       }, 8000);
 
       const confirmListener = (data: { songId: string }) => {

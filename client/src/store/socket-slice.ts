@@ -122,7 +122,7 @@ export const selectSong = createAsyncThunk(
 
       const timeoutPromise = new Promise<string>((_, reject) => {
         setTimeout(() => {
-          reject(new Error("Song selection timed out"));
+          reject(new Error("Song selection timed out slice"));
         }, 5000);
       });
 
