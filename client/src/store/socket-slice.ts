@@ -21,12 +21,14 @@ interface SocketState {
   connected: boolean;
   currentSong: SongWithHebrew | null;
   isLoading: boolean;
+  isInit: boolean;
 }
 
 const initialState: SocketState = {
   connected: false,
   currentSong: null,
   isLoading: false,
+  isInit: false,
 };
 
 export const initializeSocket = createAsyncThunk(
@@ -34,9 +36,13 @@ export const initializeSocket = createAsyncThunk(
   async (_, { dispatch, getState }) => {
     const state = getState() as RootState;
 
+    if (state.socket.isInit) {
+      return true;
+    }
+
     const { user, isAuthenticated } = state.auth;
     if (!isAuthenticated || !user) {
-      return;
+      return false;
     }
 
     socketService.initialize(user.id);
@@ -63,16 +69,6 @@ export const cleanupSocket = createAsyncThunk("socket/cleanup", async () => {
   socketService.disconnect();
   return true;
 });
-
-export const handleSongSelected = createAsyncThunk(
-  "socket/handleSongSelected",
-  async (songId: string, { dispatch }) => {
-    if (songId) {
-      return dispatch(fetchSong(songId)).unwrap();
-    }
-    return null;
-  }
-);
 
 export const handleSongQuit = createAsyncThunk(
   "socket/handleSongQuit",
@@ -179,11 +175,17 @@ const socketSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(initializeSocket.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.isInit = true;
+        }
+      })
 
       .addCase(cleanupSocket.fulfilled, (state) => {
         state.connected = false;
         state.currentSong = null;
         state.isLoading = false;
+        state.isInit = false;
       })
 
       .addCase(fetchSong.pending, (state) => {
@@ -199,10 +201,6 @@ const socketSlice = createSlice({
 
       .addCase(selectSong.fulfilled, (state) => {
         state.isLoading = true;
-      })
-
-      .addCase(selectSong.rejected, (state) => {
-        state.isLoading = false;
       })
 
       .addCase(quitSong.fulfilled, (state) => {

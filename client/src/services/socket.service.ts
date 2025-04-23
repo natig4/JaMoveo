@@ -179,8 +179,11 @@ class SocketService {
   selectSong(userId: string, songId: string): Promise<void> {
     if (!userId) return Promise.reject(new Error("No user ID provided"));
 
+    const requestId = `${userId}-${songId}-${Date.now()}`;
+
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
+        this.socket?.off("song_selected", confirmListener);
         reject(new Error("Song selection timed out"));
       }, 8000);
 
@@ -195,11 +198,19 @@ class SocketService {
       this.socket?.on("song_selected", confirmListener);
 
       if (this.connected && this.socket) {
-        this.socket.emit("select_song", { userId, songId });
+        const isDuplicate = this.pendingActions.some((action) =>
+          action.toString().includes(songId)
+        );
+
+        if (!isDuplicate) {
+          this.socket.emit("select_song", { userId, songId, requestId });
+        }
       } else {
-        this.pendingActions.push(() => {
-          this.socket?.emit("select_song", { userId, songId });
-        });
+        const pendingAction = () => {
+          this.socket?.emit("select_song", { userId, songId, requestId });
+        };
+
+        this.pendingActions.push(pendingAction);
 
         resolve();
       }
@@ -209,6 +220,7 @@ class SocketService {
         this.socket?.off("connect_error", errorHandler);
         reject(error);
       };
+
       this.socket?.once("connect_error", errorHandler);
     });
   }
