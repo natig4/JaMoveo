@@ -21,25 +21,18 @@ interface SocketState {
   connected: boolean;
   currentSong: SongWithHebrew | null;
   isLoading: boolean;
-  initialized: boolean;
 }
 
 const initialState: SocketState = {
   connected: false,
   currentSong: null,
   isLoading: false,
-  initialized: false,
 };
 
 export const initializeSocket = createAsyncThunk(
   "socket/initialize",
   async (_, { dispatch, getState }) => {
     const state = getState() as RootState;
-
-    // Don't initialize more than once!
-    if (state.socket.initialized) {
-      return;
-    }
 
     const { user, isAuthenticated } = state.auth;
     if (!isAuthenticated || !user) {
@@ -160,21 +153,16 @@ const socketSlice = createSlice({
     setIsLoading(state, action: PayloadAction<boolean>) {
       state.isLoading = action.payload;
     },
-    resetSocketState(state) {
+    resetSocketState() {
       return {
         ...initialState,
-        initialized: state.initialized,
       };
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(initializeSocket.fulfilled, (state) => {
-        state.initialized = true;
-      })
 
       .addCase(cleanupSocket.fulfilled, (state) => {
-        state.initialized = false;
         state.connected = false;
         state.currentSong = null;
         state.isLoading = false;
