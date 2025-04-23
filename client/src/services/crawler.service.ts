@@ -1,5 +1,6 @@
 import { ISong } from "../model/types";
 import { API_URL } from "./helpers.service";
+import { addSongsToCache } from "./songs.service";
 
 interface PopularSongsResponse {
   success: boolean;
@@ -28,6 +29,7 @@ export async function fetchPopularSongs(
     }
 
     const data = await response.json();
+    addSongsToCache(data.songs);
     return data as PopularSongsResponse;
   } catch (error) {
     console.error("Error fetching popular songs:", error);

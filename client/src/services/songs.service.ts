@@ -1,6 +1,22 @@
 import { ISong } from "../model/types";
 import { API_URL } from "./helpers.service";
 
+const songs: Map<string, ISong> = new Map();
+
+function addSongToMap(song: ISong) {
+  songs.set(song.id, song);
+}
+
+export function addSongsToCache(songs: ISong[]) {
+  songs.forEach((s: ISong) => {
+    addSongToMap(s);
+  });
+}
+
+function getSongFromCache(id: string) {
+  return songs.get(id);
+}
+
 export async function getAllSongs(): Promise<ISong[]> {
   try {
     const response = await fetch(`${API_URL}/song`, {
@@ -14,8 +30,10 @@ export async function getAllSongs(): Promise<ISong[]> {
     const data = await response.json();
 
     if (Array.isArray(data)) {
+      addSongsToCache(data);
       return data;
     } else if (data.songs) {
+      addSongsToCache(data.songs);
       return data.songs;
     }
 
@@ -27,6 +45,10 @@ export async function getAllSongs(): Promise<ISong[]> {
 }
 
 export async function getSongById(id: string): Promise<ISong> {
+  const song = getSongFromCache(id);
+  if (song) {
+    return song;
+  }
   try {
     const response = await fetch(`${API_URL}/song/${id}`, {
       credentials: "include",
@@ -67,8 +89,10 @@ export async function searchSongs(query: string): Promise<ISong[]> {
     const data = await response.json();
 
     if (Array.isArray(data)) {
+      addSongsToCache(data);
       return data;
     } else if (data.songs) {
+      addSongsToCache(data.songs);
       return data.songs;
     }
 
