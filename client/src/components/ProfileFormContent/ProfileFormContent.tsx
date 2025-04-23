@@ -54,7 +54,42 @@ const ProfileFormContent: React.FC<ProfileFormContentProps> = ({
   const isAdmin = user?.role === UserRole.ADMIN;
   const isOnboarding = variant === "onboarding";
 
+  const submitInstrumentData = () => {
+    if (user && instrument && instrument !== user.instrument) {
+      dispatch(updateInstrument({ userId: user.id, instrument }));
+      if (isOnboarding) {
+        dispatch(setCompletedInstrument(true));
+      }
+    }
+  };
+
+  const submitGroupData = () => {
+    if (user && groupName !== user.groupName) {
+      dispatch(updateGroup({ userId: user.id, groupName: groupName || null }));
+    }
+  };
+
+  const submitNewGroupData = () => {
+    if (user && newGroupName && !newGroupExists) {
+      dispatch(createGroup({ groupName: newGroupName }));
+    }
+  };
+
   const handleTabChange = (tab: FormTab) => {
+    if (isOnboarding) {
+      if (activeTab === "instrument" && isValidInstrument) {
+        submitInstrumentData();
+      } else if (activeTab === "group" && groupName) {
+        submitGroupData();
+      } else if (
+        activeTab === "createGroup" &&
+        newGroupName &&
+        !newGroupExists
+      ) {
+        submitNewGroupData();
+      }
+    }
+
     dispatch(setActiveTab(tab));
   };
 
@@ -100,7 +135,6 @@ const ProfileFormContent: React.FC<ProfileFormContentProps> = ({
     }
   };
 
-  // Helper function to check if input is valid
   const isValidInstrument = instrument.trim() !== "";
   const isGroupSubmitDisabled =
     loading || (isOnboarding && !groupName) || isCheckingGroup;
