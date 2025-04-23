@@ -114,8 +114,15 @@ export const selectSong = createAsyncThunk(
   "socket/selectSong",
   async (
     { userId, songId }: { userId: string; songId: string },
-    { dispatch }
+    { dispatch, getState }
   ) => {
+    const state = getState() as RootState;
+    console.log("Song selection state:", {
+      connected: state.socket.connected,
+      isInit: state.socket.isInit,
+      userId,
+      songId,
+    });
     try {
       dispatch(setIsLoading(true));
       await socketService.selectSong(userId, songId);

@@ -177,6 +177,13 @@ class SocketService {
   }
 
   selectSong(userId: string, songId: string): Promise<void> {
+    console.log("selectSong called with:", {
+      userId,
+      songId,
+      socketExists: !!this.socket,
+      connected: this.connected,
+      pendingActions: this.pendingActions.length,
+    });
     if (!userId) return Promise.reject(new Error("No user ID provided"));
 
     const requestId = `${userId}-${songId}`;
