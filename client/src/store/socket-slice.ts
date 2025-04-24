@@ -72,6 +72,8 @@ export const initializeSocket = createAsyncThunk(
       socketService.onAuthSuccess((data) => {
         if (data.activeSongId) {
           dispatch(fetchSong(data.activeSongId));
+        } else {
+          dispatch(setIsLoading(false));
         }
       });
 
@@ -106,22 +108,29 @@ export const checkActiveSong = createAsyncThunk(
 
     if (!state.socket.connected) {
       console.log("Not checking active song - socket not connected");
+      dispatch(setIsLoading(false));
       return null;
     }
 
     return new Promise<string | null>((resolve) => {
       dispatch(setIsLoading(true));
 
+      const timeoutId = setTimeout(() => {
+        dispatch(setIsLoading(false));
+        resolve(null);
+      }, 5000);
+
       socketService.getActiveSong((songId) => {
+        clearTimeout(timeoutId);
         console.log("Active song check result:", songId);
 
         if (songId) {
           dispatch(fetchSong(songId));
         } else {
           dispatch(setCurrentSong(null));
+          dispatch(setIsLoading(false));
         }
 
-        dispatch(setIsLoading(false));
         resolve(songId);
       });
     });
@@ -192,6 +201,10 @@ const socketSlice = createSlice({
   reducers: {
     setConnected(state, action: PayloadAction<boolean>) {
       state.connected = action.payload;
+
+      if (!action.payload) {
+        state.isLoading = false;
+      }
     },
     setCurrentSong(state, action: PayloadAction<ISong | null>) {
       state.isLoading = false;
@@ -209,6 +222,10 @@ const socketSlice = createSlice({
     },
     setError(state, action: PayloadAction<string | null>) {
       state.error = action.payload;
+
+      if (action.payload) {
+        state.isLoading = false;
+      }
     },
     resetSocketState: () => initialState,
   },
@@ -222,8 +239,11 @@ const socketSlice = createSlice({
       .addCase(initializeSocket.fulfilled, (state, action) => {
         state.isInit = true;
         state.connected = action.payload;
-        state.isLoading = false;
         state.error = null;
+
+        if (!action.payload) {
+          state.isLoading = false;
+        }
       })
       .addCase(initializeSocket.rejected, (state, action) => {
         state.isInit = false;
@@ -264,8 +284,14 @@ const socketSlice = createSlice({
         state.error = action.payload as string;
       })
 
+      .addCase(quitSong.pending, (state) => {
+        state.isLoading = true;
+      })
       .addCase(quitSong.fulfilled, (state) => {
         state.currentSong = null;
+        state.isLoading = false;
+      })
+      .addCase(quitSong.rejected, (state) => {
         state.isLoading = false;
       });
   },

@@ -45,6 +45,20 @@ class SocketService {
         });
 
         this.setupListeners();
+
+        // Add a timeout to ensure we don't wait forever for connection
+        const connectionTimeout = setTimeout(() => {
+          if (!this.connected) {
+            console.log("Socket connection timed out");
+            resolve(false);
+          }
+        }, 8000);
+
+        // Add an early connection handler to clear the timeout
+        this.socket.once("connect", () => {
+          clearTimeout(connectionTimeout);
+          resolve(true);
+        });
       } catch (error) {
         console.error("Error initializing socket:", error);
         resolve(false);
@@ -135,20 +149,31 @@ class SocketService {
   }
 
   getActiveSong(callback: ActiveSongCallback) {
-    if (!this.socket) {
+    if (!this.socket || !this.connected) {
+      console.log("Socket not available for getActiveSong request");
       callback(null);
       return;
     }
 
+    const timeoutId = setTimeout(() => {
+      console.log("getActiveSong timed out");
+      callback(null);
+    }, 5000);
+
     const action = () => {
       console.log("Requesting active song");
-      this.socket?.emit("get_active_song", callback);
+      this.socket?.emit("get_active_song", (result: string | null) => {
+        clearTimeout(timeoutId);
+        callback(result);
+      });
     };
 
     if (this.connected) {
       action();
     } else {
       this.pendingActions.push(action);
+      // Also return null immediately to avoid hanging
+      callback(null);
     }
   }
 
