@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
 import { FaMusic } from "react-icons/fa";
 import { PiMusicNoteSimpleFill } from "react-icons/pi";
@@ -19,23 +19,27 @@ function PlayerPage() {
   const { currentSong, quitSong, connected, isLoading, initialize } =
     useSocket();
 
+  const handleQuit = useCallback(() => {
+    if (user?.id) {
+      console.log("Quitting song");
+      quitSong();
+    }
+  }, [quitSong, user?.id]);
+
   useEffect(() => {
     if (user?.id) {
+      console.log("Initializing socket connection in Player component");
       initialize();
     }
 
     return () => {
       dispatch(clearSongsErrors());
     };
-  }, [dispatch, initialize, connected, user?.id]);
+  }, [dispatch, initialize, user?.id]);
 
   if (!user?.instrument || !user?.groupId) {
     return <Navigate to='/user' replace />;
   }
-
-  const handleQuit = () => {
-    quitSong();
-  };
 
   const renderConnectionStatus = () => {
     if (!connected) {

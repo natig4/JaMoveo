@@ -1,5 +1,5 @@
 import { Server as HttpServer } from "http";
-import { Server as SocketIOServer } from "socket.io";
+import { Socket, Server as SocketIOServer } from "socket.io";
 import config from "../config";
 import { handleConnection } from "./events.controller";
 import { getUserById } from "../services/users.service";
@@ -10,6 +10,13 @@ import {
   SocketData,
 } from "./types";
 
+let io: SocketIOServer<
+  ClientToServerEvents,
+  ServerToClientEvents,
+  InterServerEvents,
+  SocketData
+> | null = null;
+
 export function setupSocketIO(
   httpServer: HttpServer
 ): SocketIOServer<
@@ -18,7 +25,13 @@ export function setupSocketIO(
   InterServerEvents,
   SocketData
 > {
-  const io = new SocketIOServer<
+  if (io) {
+    console.log("Cleaning up existing Socket.IO server");
+    io.disconnectSockets(true);
+    io.close();
+  }
+
+  io = new SocketIOServer<
     ClientToServerEvents,
     ServerToClientEvents,
     InterServerEvents,
@@ -35,7 +48,7 @@ export function setupSocketIO(
       secure: config.nodeEnv === "production",
     },
     connectionStateRecovery: {
-      maxDisconnectionDuration: 5000,
+      maxDisconnectionDuration: 10000,
       skipMiddlewares: true,
     },
     pingTimeout: 20000,
@@ -46,17 +59,23 @@ export function setupSocketIO(
     try {
       const userId = socket.handshake.auth.userId as string | undefined;
       if (userId) {
+        console.log(`Socket auth: User ID ${userId} provided in auth payload`);
         const user = getUserById(userId);
         if (user) {
           socket.data.userId = userId;
           socket.data.user = user;
-
+          console.log(`Socket auth: User ${userId} authenticated successfully`);
           return next();
+        } else {
+          console.log(`Socket auth: User ${userId} not found in database`);
         }
       }
 
       if (config.nodeEnv === "development") {
         if (userId) {
+          console.log(
+            `Socket auth [DEV]: Allowing user ${userId} in development mode`
+          );
           socket.data.userId = userId;
           const user = getUserById(userId);
           if (user) {
@@ -74,8 +93,23 @@ export function setupSocketIO(
   });
 
   io.on("connection", (socket) => {
-    handleConnection(io, socket);
+    console.log(`New socket connection: ${socket.id}`);
+    handleConnection(io!, socket);
   });
 
+  console.log("Socket.IO server initialized");
   return io;
+}
+
+export function getSocketServer() {
+  return io;
+}
+
+export function closeSocketServer() {
+  if (io) {
+    console.log("Closing Socket.IO server");
+    io.disconnectSockets(true);
+    io.close();
+    io = null;
+  }
 }

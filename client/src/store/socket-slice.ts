@@ -48,30 +48,45 @@ export const initializeSocket = createAsyncThunk(
         return rejectWithValue("User not authenticated");
       }
 
-      // Initialize socket service
       const connected = await socketService.initialize(user.id);
 
-      // Add connection change listener
       socketService.onConnectionChange((status) => {
         dispatch(setConnected(status));
       });
 
-      // Add song selected listener
       socketService.onSongSelected((data) => {
         if (data.songId) {
-          dispatch(fetchSong(data.songId));
+          const cachedSong = songsService.getSongFromCache?.(data.songId);
+          if (cachedSong) {
+            dispatch(
+              setCurrentSong({
+                ...cachedSong,
+                isHebrew: isHebrewSong(cachedSong),
+              })
+            );
+          } else {
+            dispatch(fetchSong(data.songId));
+          }
         }
       });
 
-      // Add song quit listener
       socketService.onSongQuit(() => {
         dispatch(setCurrentSong(null));
       });
 
-      // Add auth success listener
       socketService.onAuthSuccess((data) => {
         if (data.activeSongId) {
-          dispatch(fetchSong(data.activeSongId));
+          const cachedSong = songsService.getSongFromCache?.(data.activeSongId);
+          if (cachedSong) {
+            dispatch(
+              setCurrentSong({
+                ...cachedSong,
+                isHebrew: isHebrewSong(cachedSong),
+              })
+            );
+          } else {
+            dispatch(fetchSong(data.activeSongId));
+          }
         } else {
           dispatch(setIsLoading(false));
         }
@@ -79,7 +94,6 @@ export const initializeSocket = createAsyncThunk(
 
       return connected;
     } catch (error) {
-      console.error("Failed to initialize socket:", error);
       return rejectWithValue(
         error instanceof Error ? error.message : "Failed to initialize socket"
       );
@@ -94,8 +108,7 @@ export const cleanupSocket = createAsyncThunk(
       socketService.disconnect();
       dispatch(resetSocketState());
       return true;
-    } catch (error) {
-      console.error("Error cleaning up socket:", error);
+    } catch {
       return false;
     }
   }
@@ -107,7 +120,6 @@ export const checkActiveSong = createAsyncThunk(
     const state = getState() as RootState;
 
     if (!state.socket.connected) {
-      console.log("Not checking active song - socket not connected");
       dispatch(setIsLoading(false));
       return null;
     }
@@ -122,10 +134,19 @@ export const checkActiveSong = createAsyncThunk(
 
       socketService.getActiveSong((songId) => {
         clearTimeout(timeoutId);
-        console.log("Active song check result:", songId);
 
         if (songId) {
-          dispatch(fetchSong(songId));
+          const cachedSong = songsService.getSongFromCache?.(songId);
+          if (cachedSong) {
+            dispatch(
+              setCurrentSong({
+                ...cachedSong,
+                isHebrew: isHebrewSong(cachedSong),
+              })
+            );
+          } else {
+            dispatch(fetchSong(songId));
+          }
         } else {
           dispatch(setCurrentSong(null));
           dispatch(setIsLoading(false));
@@ -147,7 +168,6 @@ export const fetchSong = createAsyncThunk(
         isHebrew: isHebrewSong(song),
       };
     } catch (error) {
-      console.error("Error fetching song:", error);
       return rejectWithValue(
         error instanceof Error ? error.message : "Failed to fetch song"
       );
@@ -164,15 +184,21 @@ export const selectSong = createAsyncThunk(
     try {
       dispatch(setIsLoading(true));
 
-      // Send the selection to the socket
+      const cachedSong = songsService.getSongFromCache?.(songId);
       await socketService.selectSong(userId, songId);
 
-      // Fetch the song data
-      const songData = await dispatch(fetchSong(songId)).unwrap();
+      if (cachedSong) {
+        const songWithHebrew = {
+          ...cachedSong,
+          isHebrew: isHebrewSong(cachedSong),
+        };
 
-      return songData;
+        dispatch(setCurrentSong(songWithHebrew));
+        return songWithHebrew;
+      }
+
+      return await dispatch(fetchSong(songId)).unwrap();
     } catch (error) {
-      console.error("Error selecting song:", error);
       dispatch(setIsLoading(false));
       return rejectWithValue(
         error instanceof Error ? error.message : "Failed to select song"
@@ -185,11 +211,10 @@ export const quitSong = createAsyncThunk(
   "socket/quitSong",
   async (userId: string, { dispatch }) => {
     try {
-      socketService.quitSong(userId);
       dispatch(setCurrentSong(null));
+      socketService.quitSong(userId);
       return null;
-    } catch (error) {
-      console.error("Error quitting song:", error);
+    } catch {
       return null;
     }
   }
@@ -201,28 +226,19 @@ const socketSlice = createSlice({
   reducers: {
     setConnected(state, action: PayloadAction<boolean>) {
       state.connected = action.payload;
-
       if (!action.payload) {
         state.isLoading = false;
       }
     },
-    setCurrentSong(state, action: PayloadAction<ISong | null>) {
+    setCurrentSong(state, action: PayloadAction<SongWithHebrew | null>) {
       state.isLoading = false;
-      if (action.payload) {
-        state.currentSong = {
-          ...action.payload,
-          isHebrew: isHebrewSong(action.payload),
-        };
-      } else {
-        state.currentSong = null;
-      }
+      state.currentSong = action.payload;
     },
     setIsLoading(state, action: PayloadAction<boolean>) {
       state.isLoading = action.payload;
     },
     setError(state, action: PayloadAction<string | null>) {
       state.error = action.payload;
-
       if (action.payload) {
         state.isLoading = false;
       }
@@ -231,7 +247,7 @@ const socketSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-
+      // Initialize socket
       .addCase(initializeSocket.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -240,7 +256,6 @@ const socketSlice = createSlice({
         state.isInit = true;
         state.connected = action.payload;
         state.error = null;
-
         if (!action.payload) {
           state.isLoading = false;
         }
@@ -252,10 +267,10 @@ const socketSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      .addCase(cleanupSocket.fulfilled, () => {
-        return initialState;
-      })
+      // Cleanup socket
+      .addCase(cleanupSocket.fulfilled, () => initialState)
 
+      // Fetch song
       .addCase(fetchSong.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -270,6 +285,7 @@ const socketSlice = createSlice({
         state.error = action.payload as string;
       })
 
+      // Select song
       .addCase(selectSong.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -284,8 +300,9 @@ const socketSlice = createSlice({
         state.error = action.payload as string;
       })
 
+      // Quit song
       .addCase(quitSong.pending, (state) => {
-        state.isLoading = true;
+        state.currentSong = null;
       })
       .addCase(quitSong.fulfilled, (state) => {
         state.currentSong = null;

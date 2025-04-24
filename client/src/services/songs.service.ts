@@ -1,20 +1,24 @@
 import { ISong } from "../model/types";
 import { API_URL } from "./helpers.service";
 
-const songs: Map<string, ISong> = new Map();
+const songCache: Map<string, ISong> = new Map();
 
-function addSongToMap(song: ISong) {
-  songs.set(song.id, song);
+export function addSongToCache(song: ISong) {
+  songCache.set(song.id, song);
 }
 
 export function addSongsToCache(songs: ISong[]) {
-  songs.forEach((s: ISong) => {
-    addSongToMap(s);
+  songs.forEach((song: ISong) => {
+    addSongToCache(song);
   });
 }
 
-function getSongFromCache(id: string) {
-  return songs.get(id);
+export function getSongFromCache(id: string): ISong | undefined {
+  return songCache.get(id);
+}
+
+export function clearSongCache() {
+  songCache.clear();
 }
 
 export async function getAllSongs(): Promise<ISong[]> {
@@ -28,16 +32,17 @@ export async function getAllSongs(): Promise<ISong[]> {
     }
 
     const data = await response.json();
+    let songs: ISong[] = [];
 
     if (Array.isArray(data)) {
-      addSongsToCache(data);
-      return data;
+      songs = data;
     } else if (data.songs) {
-      addSongsToCache(data.songs);
-      return data.songs;
+      songs = data.songs;
     }
 
-    return [];
+    addSongsToCache(songs);
+
+    return songs;
   } catch (error) {
     console.error("Error fetching songs:", error);
     throw error;
@@ -45,10 +50,11 @@ export async function getAllSongs(): Promise<ISong[]> {
 }
 
 export async function getSongById(id: string): Promise<ISong> {
-  const song = getSongFromCache(id);
-  if (song) {
-    return song;
+  const cachedSong = getSongFromCache(id);
+  if (cachedSong) {
+    return cachedSong;
   }
+
   try {
     const response = await fetch(`${API_URL}/song/${id}`, {
       credentials: "include",
@@ -59,14 +65,19 @@ export async function getSongById(id: string): Promise<ISong> {
     }
 
     const data = await response.json();
+    let song: ISong;
 
     if (data.id) {
-      return data as ISong;
+      song = data as ISong;
     } else if (data.song) {
-      return data.song;
+      song = data.song;
+    } else {
+      throw new Error("Invalid song data received");
     }
 
-    throw new Error("Invalid song data received");
+    addSongToCache(song);
+
+    return song;
   } catch (error) {
     console.error(`Error fetching song ${id}:`, error);
     throw error;
@@ -87,16 +98,17 @@ export async function searchSongs(query: string): Promise<ISong[]> {
     }
 
     const data = await response.json();
+    let songs: ISong[] = [];
 
     if (Array.isArray(data)) {
-      addSongsToCache(data);
-      return data;
+      songs = data;
     } else if (data.songs) {
-      addSongsToCache(data.songs);
-      return data.songs;
+      songs = data.songs;
     }
 
-    return [];
+    addSongsToCache(songs);
+
+    return songs;
   } catch (error) {
     console.error("Error searching songs:", error);
     throw error;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAppDispatch, useAppSelector } from "./redux-hooks";
 import {
   selectSong as selectSongAction,
@@ -24,6 +24,7 @@ export function useSocket() {
       if (!user || isInit || initComplete) return;
 
       try {
+        console.log("Initializing socket in useSocket hook");
         await dispatch(initializeSocket()).unwrap();
         if (isMounted) {
           setInitComplete(true);
@@ -42,31 +43,46 @@ export function useSocket() {
 
   useEffect(() => {
     if (connected && user && initComplete) {
+      console.log("Connected, checking for active song");
       dispatch(checkActiveSong());
     }
   }, [connected, user, initComplete, dispatch]);
 
-  const selectSong = async (songId: string) => {
-    if (!user) return;
+  const selectSong = useCallback(
+    async (songId: string) => {
+      if (!user) return;
 
-    try {
-      await dispatch(selectSongAction({ userId: user.id, songId })).unwrap();
-      console.log("Song selection dispatched successfully");
-    } catch (error) {
-      console.error("Error selecting song:", error);
-    }
-  };
+      try {
+        console.log(`Selecting song ${songId} in useSocket hook`);
+        await dispatch(selectSongAction({ userId: user.id, songId })).unwrap();
+        console.log("Song selection dispatched successfully");
+      } catch (error) {
+        console.error("Error selecting song:", error);
+      }
+    },
+    [user, dispatch]
+  );
 
-  const quitSong = () => {
+  const quitSong = useCallback(() => {
     if (!user) return;
+    console.log("Quitting song in useSocket hook");
     dispatch(stopScrolling());
     dispatch(quitSongAction(user.id));
-  };
+  }, [user, dispatch]);
 
-  const logout = () => {
+  const logout = useCallback(() => {
+    console.log("Logging out in useSocket hook");
     quitSong();
     dispatch(cleanupSocket());
-  };
+  }, [quitSong, dispatch]);
+
+  const initialize = useCallback(() => {
+    if (!initComplete && user) {
+      console.log("Manual initialization in useSocket hook");
+      dispatch(initializeSocket());
+      setInitComplete(true);
+    }
+  }, [initComplete, user, dispatch]);
 
   return {
     connected,
@@ -75,11 +91,6 @@ export function useSocket() {
     selectSong,
     logout,
     quitSong,
-    initialize: () => {
-      if (!initComplete && user) {
-        dispatch(initializeSocket());
-        setInitComplete(true);
-      }
-    },
+    initialize,
   };
 }
