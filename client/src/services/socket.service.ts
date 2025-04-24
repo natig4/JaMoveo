@@ -19,11 +19,13 @@ class SocketService {
   private activeSongListeners: SongSelectedCallback[] = [];
   private authSuccessListeners: AuthSuccessCallback[] = [];
   private initPromise: Promise<boolean> | null = null;
+  private reconnecting = false;
 
   initialize(userId: string): Promise<boolean> {
-    if (this.initPromise) return this.initPromise;
+    if (this.initPromise && !this.reconnecting) return this.initPromise;
 
     this.userId = userId;
+    this.reconnecting = false;
 
     this.initPromise = new Promise((resolve) => {
       try {
@@ -32,6 +34,7 @@ class SocketService {
           this.socket = null;
         }
 
+        console.log(`Initializing socket for user ${userId}`);
         this.socket = io(API_URL, {
           reconnectionAttempts: 10,
           reconnectionDelay: 1000,
@@ -78,6 +81,7 @@ class SocketService {
       this.setConnected(true);
 
       if (this.userId) {
+        console.log(`Authenticating socket for user ${this.userId}`);
         this.socket?.emit("authenticate", { userId: this.userId });
       }
 
@@ -104,6 +108,7 @@ class SocketService {
       this.setConnected(true);
 
       if (this.userId) {
+        console.log(`Re-authenticating socket for user ${this.userId}`);
         this.socket?.emit("authenticate", { userId: this.userId });
       }
 
@@ -313,10 +318,39 @@ class SocketService {
   }
 
   reconnect() {
-    if (this.socket && !this.socket.connected && this.userId) {
-      console.log("Attempting to reconnect socket");
-      this.socket.connect();
+    if (this.userId) {
+      console.log("Forced socket reconnection");
+
+      this.reconnecting = true;
+
+      return new Promise<void>((resolve) => {
+        if (this.socket) {
+          this.socket.once("disconnect", () => {
+            console.log("Socket disconnected, ready for reconnection");
+            this.socket = null;
+            this.connected = false;
+            this.initPromise = null;
+            this.notifyConnectionListeners(false);
+
+            this.initialize(this.userId!).then(() => {
+              resolve();
+            });
+          });
+
+          this.socket.disconnect();
+        } else {
+          this.connected = false;
+          this.initPromise = null;
+          this.notifyConnectionListeners(false);
+
+          this.initialize(this.userId!).then(() => {
+            resolve();
+          });
+        }
+      });
     }
+
+    return Promise.resolve();
   }
 
   disconnect() {
@@ -329,6 +363,7 @@ class SocketService {
     this.userId = null;
     this.pendingActions = [];
     this.initPromise = null;
+    this.reconnecting = false;
 
     this.notifyConnectionListeners(false);
   }

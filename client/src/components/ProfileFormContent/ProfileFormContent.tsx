@@ -17,6 +17,7 @@ import { UserRole } from "../../model/types";
 import Input from "../Input/Input";
 import InstrumentSelect from "../InstrumentSelect";
 import StyledButton from "../StyledButton/StyledButton";
+import { useSocket } from "../../hooks/useSocket";
 
 interface ProfileFormContentProps {
   variant: "profile" | "onboarding";
@@ -51,6 +52,8 @@ const ProfileFormContent: React.FC<ProfileFormContentProps> = ({
     successMessage,
   } = useAppSelector((state) => state.profileForms);
 
+  const { reconnect } = useSocket();
+
   const isAdmin = user?.role === UserRole.ADMIN;
   const isOnboarding = variant === "onboarding";
 
@@ -63,15 +66,29 @@ const ProfileFormContent: React.FC<ProfileFormContentProps> = ({
     }
   };
 
-  const submitGroupData = () => {
+  const submitGroupData = async () => {
     if (user && groupName !== user.groupName) {
-      dispatch(updateGroup({ userId: user.id, groupName: groupName || null }));
+      try {
+        await dispatch(
+          updateGroup({ userId: user.id, groupName: groupName || null })
+        ).unwrap();
+
+        await reconnect();
+      } catch (error) {
+        console.error("Error updating group:", error);
+      }
     }
   };
 
-  const submitNewGroupData = () => {
+  const submitNewGroupData = async () => {
     if (user && newGroupName && !newGroupExists) {
-      dispatch(createGroup({ groupName: newGroupName }));
+      try {
+        await dispatch(createGroup({ groupName: newGroupName })).unwrap();
+
+        await reconnect();
+      } catch (error) {
+        console.error("Error creating group:", error);
+      }
     }
   };
 

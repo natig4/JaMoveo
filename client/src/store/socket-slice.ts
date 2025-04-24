@@ -23,6 +23,7 @@ interface SocketState {
   isLoading: boolean;
   isInit: boolean;
   error: string | null;
+  reconnecting: boolean;
 }
 
 const initialState: SocketState = {
@@ -31,6 +32,7 @@ const initialState: SocketState = {
   isLoading: false,
   isInit: false,
   error: null,
+  reconnecting: false,
 };
 
 export const initializeSocket = createAsyncThunk(
@@ -39,7 +41,7 @@ export const initializeSocket = createAsyncThunk(
     try {
       const state = getState() as RootState;
 
-      if (state.socket.isInit) {
+      if (state.socket.isInit && !state.socket.reconnecting) {
         return true;
       }
 
@@ -110,6 +112,35 @@ export const cleanupSocket = createAsyncThunk(
       return true;
     } catch {
       return false;
+    }
+  }
+);
+
+export const reconnectSocket = createAsyncThunk(
+  "socket/reconnect",
+  async (_, { dispatch, getState }) => {
+    try {
+      const state = getState() as RootState;
+      const { user } = state.auth;
+
+      if (!user) {
+        return false;
+      }
+
+      dispatch(setReconnecting(true));
+
+      await dispatch(cleanupSocket()).unwrap();
+
+      await socketService.reconnect();
+
+      await dispatch(checkActiveSong()).unwrap();
+
+      return true;
+    } catch (error) {
+      console.error("Reconnection error:", error);
+      return false;
+    } finally {
+      dispatch(setReconnecting(false));
     }
   }
 );
@@ -243,6 +274,12 @@ const socketSlice = createSlice({
         state.isLoading = false;
       }
     },
+    setReconnecting(state, action: PayloadAction<boolean>) {
+      state.reconnecting = action.payload;
+      if (action.payload) {
+        state.connected = false;
+      }
+    },
     resetSocketState: () => initialState,
   },
   extraReducers: (builder) => {
@@ -256,6 +293,7 @@ const socketSlice = createSlice({
         state.isInit = true;
         state.connected = action.payload;
         state.error = null;
+        state.reconnecting = false;
         if (!action.payload) {
           state.isLoading = false;
         }
@@ -264,11 +302,33 @@ const socketSlice = createSlice({
         state.isInit = false;
         state.connected = false;
         state.isLoading = false;
+        state.reconnecting = false;
         state.error = action.payload as string;
       })
 
       // Cleanup socket
-      .addCase(cleanupSocket.fulfilled, () => initialState)
+      .addCase(cleanupSocket.fulfilled, (state) => {
+        if (!state.reconnecting) {
+          return initialState;
+        }
+        state.connected = false;
+        state.isInit = false;
+        state.isLoading = true;
+        state.currentSong = null;
+      })
+
+      .addCase(reconnectSocket.pending, (state) => {
+        state.reconnecting = true;
+        state.isLoading = true;
+      })
+      .addCase(reconnectSocket.fulfilled, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(reconnectSocket.rejected, (state) => {
+        state.reconnecting = false;
+        state.isLoading = false;
+        state.error = "Failed to reconnect socket";
+      })
 
       // Fetch song
       .addCase(fetchSong.pending, (state) => {
@@ -319,6 +379,7 @@ export const {
   setCurrentSong,
   setIsLoading,
   setError,
+  setReconnecting,
   resetSocketState,
 } = socketSlice.actions;
 

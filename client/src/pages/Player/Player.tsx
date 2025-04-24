@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
 import { FaMusic } from "react-icons/fa";
 import { PiMusicNoteSimpleFill } from "react-icons/pi";
@@ -16,8 +16,22 @@ import LoadingPage from "../../components/Loading/Loading";
 function PlayerPage() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { currentSong, quitSong, connected, isLoading, initialize } =
+  const { currentSong, quitSong, connected, isLoading, initialize, reconnect } =
     useSocket();
+
+  const connectionAttemptedRef = useRef(false);
+
+  const ensureSocketConnection = useCallback(() => {
+    if (user?.id && !connectionAttemptedRef.current) {
+      connectionAttemptedRef.current = true;
+
+      if (connected) {
+        reconnect();
+      } else {
+        initialize();
+      }
+    }
+  }, [user?.id, connected, initialize, reconnect]);
 
   const handleQuit = useCallback(() => {
     if (user?.id) {
@@ -28,14 +42,19 @@ function PlayerPage() {
 
   useEffect(() => {
     if (user?.id) {
-      console.log("Initializing socket connection in Player component");
-      initialize();
+      connectionAttemptedRef.current = false;
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (user?.id) {
+      ensureSocketConnection();
     }
 
     return () => {
       dispatch(clearSongsErrors());
     };
-  }, [dispatch, initialize, user?.id]);
+  }, [dispatch, user?.id, ensureSocketConnection]);
 
   if (!user?.instrument || !user?.groupId) {
     return <Navigate to='/user' replace />;

@@ -8,6 +8,7 @@ import {
   cleanupSocket,
 } from "../store/socket-slice";
 import { stopScrolling } from "../store/songs-slice";
+import socketService from "../services/socket.service";
 
 export function useSocket() {
   const dispatch = useAppDispatch();
@@ -84,6 +85,22 @@ export function useSocket() {
     }
   }, [initComplete, user, dispatch]);
 
+  const reconnect = useCallback(async () => {
+    if (user) {
+      console.log("Reconnecting socket after group change");
+
+      await dispatch(cleanupSocket()).unwrap();
+      setInitComplete(false);
+
+      socketService.reconnect();
+
+      await dispatch(initializeSocket()).unwrap();
+      setInitComplete(true);
+
+      dispatch(checkActiveSong());
+    }
+  }, [user, dispatch]);
+
   return {
     connected,
     currentSong,
@@ -92,5 +109,6 @@ export function useSocket() {
     logout,
     quitSong,
     initialize,
+    reconnect,
   };
 }
