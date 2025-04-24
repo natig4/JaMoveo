@@ -4,6 +4,11 @@ import { API_URL } from "./helpers.service";
 type ConnectionChangeCallback = (status: boolean) => void;
 type SongSelectedCallback = (data: { songId: string }) => void;
 type ActiveSongCallback = (songId: string | null) => void;
+type AuthSuccessCallback = (data: {
+  connected: boolean;
+  message: string;
+  activeSongId?: string;
+}) => void;
 
 class SocketService {
   private socket: typeof Socket | null = null;
@@ -12,39 +17,61 @@ class SocketService {
   private pendingActions: (() => void)[] = [];
   private connectionListeners: ConnectionChangeCallback[] = [];
   private activeSongListeners: SongSelectedCallback[] = [];
+  private authSuccessListeners: AuthSuccessCallback[] = [];
+  private initPromise: Promise<boolean> | null = null;
 
-  initialize(userId: string) {
-    if (this.socket) return;
+  initialize(userId: string): Promise<boolean> {
+    if (this.initPromise) return this.initPromise;
 
     this.userId = userId;
 
-    try {
-      this.socket = io(API_URL, {
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        timeout: 20000,
-        auth: {
-          userId, // Send userId for direct authentication as fallback
-        },
-      });
+    this.initPromise = new Promise((resolve) => {
+      try {
+        if (this.socket && this.socket.connected) {
+          this.socket.disconnect();
+          this.socket = null;
+        }
 
-      this.setupListeners();
-    } catch (error) {
-      console.error("Error initializing socket:", error);
-    }
+        this.socket = io(API_URL, {
+          reconnectionAttempts: 10,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          timeout: 20000,
+          auth: {
+            userId, // Send userId for direct authentication as fallback
+          },
+          autoConnect: true,
+          transports: ["websocket", "polling"],
+        });
+
+        this.setupListeners();
+      } catch (error) {
+        console.error("Error initializing socket:", error);
+        resolve(false);
+      }
+    });
+
+    return this.initPromise;
   }
 
   private setupListeners() {
     if (!this.socket) return;
 
+    this.socket.removeAllListeners();
+
     this.socket.on("connect", () => {
+      console.log("Socket connected");
       this.setConnected(true);
+
+      if (this.userId) {
+        this.socket?.emit("authenticate", { userId: this.userId });
+      }
 
       this.processPendingActions();
     });
 
     this.socket.on("disconnect", () => {
+      console.log("Socket disconnected");
       this.setConnected(false);
     });
 
@@ -54,10 +81,12 @@ class SocketService {
     });
 
     this.socket.on("connection_status", (status: boolean) => {
+      console.log("Connection status update:", status);
       this.setConnected(status);
     });
 
-    this.socket.on("reconnect", () => {
+    this.socket.on("reconnect", (attemptNumber: number) => {
+      console.log(`Socket reconnected after ${attemptNumber} attempts`);
       this.setConnected(true);
 
       if (this.userId) {
@@ -84,30 +113,66 @@ class SocketService {
         message: string;
         activeSongId?: string;
       }) => {
+        console.log("Auth success:", data);
+        this.setConnected(data.connected);
+
+        this.notifyAuthSuccessListeners(data);
+
         if (data.activeSongId) {
-          this.notifyActiveSongListeners({ songId: data.activeSongId! });
+          this.notifyActiveSongListeners({ songId: data.activeSongId });
         }
       }
     );
+
+    this.socket.on("song_selected", (data: { songId: string }) => {
+      console.log("Song selected event:", data);
+      this.notifyActiveSongListeners(data);
+    });
+
+    this.socket.on("song_quit", () => {
+      console.log("Song quit event received");
+    });
   }
 
   getActiveSong(callback: ActiveSongCallback) {
-    if (!this.socket || !this.connected) {
+    if (!this.socket) {
       callback(null);
       return;
     }
 
-    this.socket.emit("get_active_song", callback);
+    const action = () => {
+      console.log("Requesting active song");
+      this.socket?.emit("get_active_song", callback);
+    };
+
+    if (this.connected) {
+      action();
+    } else {
+      this.pendingActions.push(action);
+    }
   }
 
   private notifyActiveSongListeners(data: { songId: string }) {
     this.activeSongListeners.forEach((callback) => callback(data));
   }
 
+  private notifyAuthSuccessListeners(data: {
+    connected: boolean;
+    message: string;
+    activeSongId?: string;
+  }) {
+    this.authSuccessListeners.forEach((callback) => callback(data));
+  }
+
   private setConnected(status: boolean) {
     if (this.connected !== status) {
+      console.log(`Socket connection status changed: ${status}`);
       this.connected = status;
       this.notifyConnectionListeners(status);
+
+      if (status) {
+        this.processPendingActions();
+      }
     }
   }
 
@@ -117,6 +182,7 @@ class SocketService {
 
   private processPendingActions() {
     if (this.pendingActions.length > 0 && this.connected) {
+      console.log(`Processing ${this.pendingActions.length} pending actions`);
       const actionsToProcess = [...this.pendingActions];
       this.pendingActions = [];
 
@@ -146,10 +212,14 @@ class SocketService {
     };
   }
 
-  offConnectionChange(callback: ConnectionChangeCallback) {
-    this.connectionListeners = this.connectionListeners.filter(
-      (cb) => cb !== callback
-    );
+  onAuthSuccess(callback: AuthSuccessCallback) {
+    this.authSuccessListeners.push(callback);
+
+    return () => {
+      this.authSuccessListeners = this.authSuccessListeners.filter(
+        (cb) => cb !== callback
+      );
+    };
   }
 
   onSongSelected(callback: SongSelectedCallback) {
@@ -157,10 +227,7 @@ class SocketService {
 
     this.activeSongListeners.push(callback);
 
-    this.socket.on("song_selected", callback);
-
     return () => {
-      this.socket?.off("song_selected", callback);
       this.activeSongListeners = this.activeSongListeners.filter(
         (cb) => cb !== callback
       );
@@ -177,98 +244,66 @@ class SocketService {
   }
 
   selectSong(userId: string, songId: string): Promise<void> {
-    console.log("selectSong called with:", {
-      userId,
-      songId,
-      socketExists: !!this.socket,
-      connected: this.connected,
-      pendingActions: this.pendingActions.length,
-    });
-
     if (!userId) return Promise.reject(new Error("No user ID provided"));
+    if (!songId) return Promise.reject(new Error("No song ID provided"));
 
-    const pendingSelectionExists = this.pendingActions.some((action) =>
-      action.toString().includes(songId)
-    );
-
-    if (pendingSelectionExists) {
-      console.log(
-        `Selection for song ${songId} already pending, resolving immediately`
-      );
-      return Promise.resolve();
-    }
+    console.log(`Selecting song: ${songId} by user: ${userId}`);
+    const requestId = `${userId}-${songId}-${Date.now()}`;
 
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
-        console.log(`Selection timeout for song ${songId}`);
-        this.socket?.off("song_selected", confirmListener);
         reject(new Error("Song selection timed out service"));
       }, 8000);
 
-      const confirmListener = (data: { songId: string }) => {
-        console.log(
-          `Received song_selected event: ${data.songId}, expecting: ${songId}`
-        );
-        if (data.songId === songId) {
-          clearTimeout(timeout);
-          this.socket?.off("song_selected", confirmListener);
-
-          this.pendingActions = this.pendingActions.filter(
-            (action) => !action.toString().includes(songId)
-          );
-
-          resolve();
-        }
+      const action = () => {
+        this.socket?.emit("select_song", { userId, songId, requestId });
+        resolve();
       };
-
-      this.socket?.on("song_selected", confirmListener);
 
       if (this.connected && this.socket) {
-        console.log(`Emitting select_song for ${songId}`);
-        this.socket.emit("select_song", { userId, songId });
+        action();
       } else {
-        console.log(`Socket not connected, queueing selection for ${songId}`);
-        const pendingAction = () => {
-          console.log(`Executing queued selection for ${songId}`);
-          this.socket?.emit("select_song", { userId, songId });
-        };
-
-        this.pendingActions.push(pendingAction);
+        console.log("Queuing song selection for later");
+        this.pendingActions.push(action);
+        resolve(); // Optimistically resolve since we've queued the action
       }
 
-      const errorHandler = (error: Error) => {
-        console.error(`Socket error during song selection: ${error.message}`);
-        clearTimeout(timeout);
-        this.socket?.off("connect_error", errorHandler);
-        reject(error);
-      };
-
-      this.socket?.once("connect_error", errorHandler);
+      clearTimeout(timeout);
     });
   }
 
   quitSong(userId: string) {
     if (!userId) return;
+    console.log(`Quitting song for user: ${userId}`);
+
+    const action = () => {
+      this.socket?.emit("quit_song", { userId });
+    };
 
     if (this.connected && this.socket) {
-      this.socket.emit("quit_song", { userId });
+      action();
     } else {
-      this.pendingActions.push(() => {
-        this.socket?.emit("quit_song", { userId });
-      });
+      this.pendingActions.push(action);
+    }
+  }
+
+  reconnect() {
+    if (this.socket && !this.socket.connected && this.userId) {
+      console.log("Attempting to reconnect socket");
+      this.socket.connect();
     }
   }
 
   disconnect() {
+    console.log("Disconnecting socket");
     if (!this.socket) return;
 
-    this.socket.removeAllListeners();
     this.socket.disconnect();
     this.socket = null;
     this.connected = false;
     this.userId = null;
     this.pendingActions = [];
-    this.activeSongListeners = [];
+    this.initPromise = null;
 
     this.notifyConnectionListeners(false);
   }

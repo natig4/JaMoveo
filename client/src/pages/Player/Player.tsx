@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "../../hooks/redux-hooks";
 import { FaMusic } from "react-icons/fa";
 import { PiMusicNoteSimpleFill } from "react-icons/pi";
@@ -11,7 +12,6 @@ import StyledButton from "../../components/StyledButton/StyledButton";
 import { useSocket } from "../../hooks/useSocket";
 import { Navigate } from "react-router-dom";
 import LoadingPage from "../../components/Loading/Loading";
-import { useEffect } from "react";
 
 function PlayerPage() {
   const dispatch = useAppDispatch();
@@ -20,11 +20,14 @@ function PlayerPage() {
     useSocket();
 
   useEffect(() => {
-    initialize();
+    if (user?.id) {
+      initialize();
+    }
+
     return () => {
       dispatch(clearSongsErrors());
     };
-  }, [dispatch, initialize]);
+  }, [dispatch, initialize, connected, user?.id]);
 
   if (!user?.instrument || !user?.groupId) {
     return <Navigate to='/user' replace />;

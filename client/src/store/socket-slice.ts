@@ -22,6 +22,7 @@ interface SocketState {
   currentSong: SongWithHebrew | null;
   isLoading: boolean;
   isInit: boolean;
+  error: string | null;
 }
 
 const initialState: SocketState = {
@@ -29,63 +30,72 @@ const initialState: SocketState = {
   currentSong: null,
   isLoading: false,
   isInit: false,
+  error: null,
 };
 
 export const initializeSocket = createAsyncThunk(
   "socket/initialize",
-  async (_, { dispatch, getState }) => {
-    const state = getState() as RootState;
+  async (_, { dispatch, getState, rejectWithValue }) => {
+    try {
+      const state = getState() as RootState;
 
-    if (state.socket.isInit) {
-      return true;
+      if (state.socket.isInit) {
+        return true;
+      }
+
+      const { user, isAuthenticated } = state.auth;
+      if (!isAuthenticated || !user) {
+        return rejectWithValue("User not authenticated");
+      }
+
+      // Initialize socket service
+      const connected = await socketService.initialize(user.id);
+
+      // Add connection change listener
+      socketService.onConnectionChange((status) => {
+        dispatch(setConnected(status));
+      });
+
+      // Add song selected listener
+      socketService.onSongSelected((data) => {
+        if (data.songId) {
+          dispatch(fetchSong(data.songId));
+        }
+      });
+
+      // Add song quit listener
+      socketService.onSongQuit(() => {
+        dispatch(setCurrentSong(null));
+      });
+
+      // Add auth success listener
+      socketService.onAuthSuccess((data) => {
+        if (data.activeSongId) {
+          dispatch(fetchSong(data.activeSongId));
+        }
+      });
+
+      return connected;
+    } catch (error) {
+      console.error("Failed to initialize socket:", error);
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Failed to initialize socket"
+      );
     }
+  }
+);
 
-    const { user, isAuthenticated } = state.auth;
-    if (!isAuthenticated || !user) {
+export const cleanupSocket = createAsyncThunk(
+  "socket/cleanup",
+  async (_, { dispatch }) => {
+    try {
+      socketService.disconnect();
+      dispatch(resetSocketState());
+      return true;
+    } catch (error) {
+      console.error("Error cleaning up socket:", error);
       return false;
     }
-
-    socketService.initialize(user.id);
-
-    socketService.onConnectionChange((status) => {
-      dispatch(setConnected(status));
-    });
-
-    socketService.onSongSelected((data) => {
-      if (data.songId) {
-        dispatch(fetchSong(data.songId));
-      }
-    });
-
-    socketService.onSongQuit(() => {
-      dispatch(setCurrentSong(null));
-    });
-
-    return true;
-  }
-);
-
-export const cleanupSocket = createAsyncThunk("socket/cleanup", async () => {
-  socketService.disconnect();
-  return true;
-});
-
-export const handleSongQuit = createAsyncThunk(
-  "socket/handleSongQuit",
-  async (_, { dispatch }) => {
-    dispatch(setCurrentSong(null));
-    return null;
-  }
-);
-
-export const fetchSong = createAsyncThunk(
-  "socket/fetchSong",
-  async (songId: string) => {
-    const song = await songsService.getSongById(songId);
-    return {
-      ...song,
-      isHebrew: isHebrewSong(song),
-    };
   }
 );
 
@@ -93,20 +103,46 @@ export const checkActiveSong = createAsyncThunk(
   "socket/checkActiveSong",
   async (_, { dispatch, getState }) => {
     const state = getState() as RootState;
+
     if (!state.socket.connected) {
+      console.log("Not checking active song - socket not connected");
       return null;
     }
 
     return new Promise<string | null>((resolve) => {
+      dispatch(setIsLoading(true));
+
       socketService.getActiveSong((songId) => {
+        console.log("Active song check result:", songId);
+
         if (songId) {
           dispatch(fetchSong(songId));
         } else {
           dispatch(setCurrentSong(null));
         }
+
+        dispatch(setIsLoading(false));
         resolve(songId);
       });
     });
+  }
+);
+
+export const fetchSong = createAsyncThunk(
+  "socket/fetchSong",
+  async (songId: string, { rejectWithValue }) => {
+    try {
+      const song = await songsService.getSongById(songId);
+      return {
+        ...song,
+        isHebrew: isHebrewSong(song),
+      };
+    } catch (error) {
+      console.error("Error fetching song:", error);
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Failed to fetch song"
+      );
+    }
   }
 );
 
@@ -114,33 +150,24 @@ export const selectSong = createAsyncThunk(
   "socket/selectSong",
   async (
     { userId, songId }: { userId: string; songId: string },
-    { dispatch, getState }
+    { dispatch, rejectWithValue }
   ) => {
-    const state = getState() as RootState;
-    console.log("Song selection state:", {
-      connected: state.socket.connected,
-      isInit: state.socket.isInit,
-      userId,
-      songId,
-    });
     try {
       dispatch(setIsLoading(true));
+
+      // Send the selection to the socket
       await socketService.selectSong(userId, songId);
 
-      const timeoutPromise = new Promise<string>((_, reject) => {
-        setTimeout(() => {
-          reject(new Error("Song selection timed out slice"));
-        }, 5000);
-      });
+      // Fetch the song data
+      const songData = await dispatch(fetchSong(songId)).unwrap();
 
-      return await Promise.race([
-        dispatch(fetchSong(songId)).unwrap(),
-        timeoutPromise,
-      ]);
+      return songData;
     } catch (error) {
-      dispatch(setIsLoading(false));
       console.error("Error selecting song:", error);
-      throw error;
+      dispatch(setIsLoading(false));
+      return rejectWithValue(
+        error instanceof Error ? error.message : "Failed to select song"
+      );
     }
   }
 );
@@ -148,9 +175,14 @@ export const selectSong = createAsyncThunk(
 export const quitSong = createAsyncThunk(
   "socket/quitSong",
   async (userId: string, { dispatch }) => {
-    socketService.quitSong(userId);
-    dispatch(setCurrentSong(null));
-    return null;
+    try {
+      socketService.quitSong(userId);
+      dispatch(setCurrentSong(null));
+      return null;
+    } catch (error) {
+      console.error("Error quitting song:", error);
+      return null;
+    }
   }
 );
 
@@ -162,6 +194,7 @@ const socketSlice = createSlice({
       state.connected = action.payload;
     },
     setCurrentSong(state, action: PayloadAction<ISong | null>) {
+      state.isLoading = false;
       if (action.payload) {
         state.currentSong = {
           ...action.payload,
@@ -174,55 +207,76 @@ const socketSlice = createSlice({
     setIsLoading(state, action: PayloadAction<boolean>) {
       state.isLoading = action.payload;
     },
-    resetSocketState() {
-      return {
-        ...initialState,
-      };
+    setError(state, action: PayloadAction<string | null>) {
+      state.error = action.payload;
     },
+    resetSocketState: () => initialState,
   },
   extraReducers: (builder) => {
     builder
+
+      .addCase(initializeSocket.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
       .addCase(initializeSocket.fulfilled, (state, action) => {
-        if (action.payload) {
-          state.isInit = true;
-        }
+        state.isInit = true;
+        state.connected = action.payload;
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(initializeSocket.rejected, (state, action) => {
+        state.isInit = false;
+        state.connected = false;
+        state.isLoading = false;
+        state.error = action.payload as string;
       })
 
-      .addCase(cleanupSocket.fulfilled, (state) => {
-        state.connected = false;
-        state.currentSong = null;
-        state.isLoading = false;
-        state.isInit = false;
+      .addCase(cleanupSocket.fulfilled, () => {
+        return initialState;
       })
 
       .addCase(fetchSong.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
       })
       .addCase(fetchSong.fulfilled, (state, action) => {
         state.currentSong = action.payload;
         state.isLoading = false;
+        state.error = null;
       })
-      .addCase(fetchSong.rejected, (state) => {
+      .addCase(fetchSong.rejected, (state, action) => {
         state.isLoading = false;
+        state.error = action.payload as string;
       })
 
-      .addCase(selectSong.fulfilled, (state) => {
+      .addCase(selectSong.pending, (state) => {
         state.isLoading = true;
+        state.error = null;
       })
-
-      .addCase(selectSong.rejected, (state, action) => {
-        console.log("selectSong.rejected", action.payload);
-
+      .addCase(selectSong.fulfilled, (state, action) => {
+        state.currentSong = action.payload;
         state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(selectSong.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
       })
 
       .addCase(quitSong.fulfilled, (state) => {
         state.currentSong = null;
+        state.isLoading = false;
       });
   },
 });
 
-export const { setConnected, setCurrentSong, setIsLoading, resetSocketState } =
-  socketSlice.actions;
+export const {
+  setConnected,
+  setCurrentSong,
+  setIsLoading,
+  setError,
+  resetSocketState,
+} = socketSlice.actions;
 
 export default socketSlice.reducer;

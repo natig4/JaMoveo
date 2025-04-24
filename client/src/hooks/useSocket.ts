@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "./redux-hooks";
 import {
   selectSong as selectSongAction,
@@ -12,19 +12,49 @@ import { stopScrolling } from "../store/songs-slice";
 export function useSocket() {
   const dispatch = useAppDispatch();
   const { user } = useAppSelector((state) => state.auth);
-  const { connected, currentSong, isLoading } = useAppSelector(
+  const { connected, currentSong, isLoading, isInit } = useAppSelector(
     (state) => state.socket
   );
+  const [initComplete, setInitComplete] = useState(false);
 
   useEffect(() => {
-    if (connected && user) {
+    let isMounted = true;
+
+    const initSocket = async () => {
+      if (!user || isInit || initComplete) return;
+
+      try {
+        await dispatch(initializeSocket()).unwrap();
+        if (isMounted) {
+          setInitComplete(true);
+        }
+      } catch (error) {
+        console.error("Failed to initialize socket:", error);
+      }
+    };
+
+    initSocket();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, isInit, initComplete, dispatch]);
+
+  useEffect(() => {
+    if (connected && user && initComplete) {
       dispatch(checkActiveSong());
     }
-  }, [connected, user, dispatch]);
+  }, [connected, user, initComplete, dispatch]);
 
-  const selectSong = (songId: string) => {
+  const selectSong = async (songId: string) => {
     if (!user) return;
-    dispatch(selectSongAction({ userId: user.id, songId }));
+
+    try {
+      await dispatch(selectSongAction({ userId: user.id, songId })).unwrap();
+      console.log("Song selection dispatched successfully");
+    } catch (error) {
+      console.error("Error selecting song:", error);
+    }
   };
 
   const quitSong = () => {
@@ -45,6 +75,11 @@ export function useSocket() {
     selectSong,
     logout,
     quitSong,
-    initialize: () => dispatch(initializeSocket()),
+    initialize: () => {
+      if (!initComplete && user) {
+        dispatch(initializeSocket());
+        setInitComplete(true);
+      }
+    },
   };
 }

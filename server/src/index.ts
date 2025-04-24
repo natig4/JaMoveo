@@ -14,12 +14,10 @@ import {
   initializeController,
   getActiveGroupSongs,
 } from "./socket/events.controller";
+import { saveActiveSongsSync } from "./services/activeSongs.service";
 
 const PORT = config.port;
 let isShuttingDown = false;
-
-const DATA_DIR = path.join(__dirname, "..", "data");
-const ACTIVE_SONGS_FILE = path.join(DATA_DIR, "activePlayingSongs.json");
 
 // Initialize all data sources
 async function initializeData() {
@@ -34,41 +32,6 @@ async function initializeData() {
   } catch (error) {
     console.error("Failed to initialize data:", error);
     process.exit(1);
-  }
-}
-
-function saveActiveSongsSync(activeSongs: Map<string, string>): void {
-  try {
-    if (activeSongs.size === 0) {
-      console.log("No active songs to save");
-      return;
-    }
-
-    const activeData: Record<string, string> = {};
-    activeSongs.forEach((songId, groupId) => {
-      activeData[groupId] = songId;
-    });
-
-    if (!existsSync(DATA_DIR)) {
-      try {
-        const mkdirSync = require("fs").mkdirSync;
-        mkdirSync(DATA_DIR, { recursive: true });
-      } catch (err) {
-        console.error("Failed to create data directory:", err);
-        return;
-      }
-    }
-
-    writeFileSync(
-      ACTIVE_SONGS_FILE,
-      JSON.stringify(activeData, null, 2),
-      "utf8"
-    );
-    console.log(
-      `[Shutdown] Active songs saved to file: ${activeSongs.size} entries`
-    );
-  } catch (error) {
-    console.error("[Shutdown] Error saving active songs:", error);
   }
 }
 
